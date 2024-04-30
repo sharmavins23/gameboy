@@ -7,6 +7,26 @@ This project is a follow-along of
 It's a simple project that features a (nearly) cycle-accurate Game Boy emulator,
 functional with a few games.
 
+Notably, it features some serious refactoring as well as improvements to logging
+and robustness over the original.
+
+# Setup
+
+The project was originally created using WSL2, though it can run on Windows with
+proper setup (see the original repository for the DLL files - DLLs can simply be
+added in with the corresponding folder).
+
+For Linux:
+
+1. `sudo apt-get install cmake build-essential libsdl2-dev libsdl2-ttf-dev`
+2. `mkdir build`
+3. `cd build`
+4. `cmake ..`
+5. `make`
+6. `gbemu/gbemu ../roms/<RomName>.gb`
+
+# Technical Information
+
 # References
 
 -   [Game Boy Pan Docs](https://gbdev.io/pandocs/)
