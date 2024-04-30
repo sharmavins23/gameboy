@@ -10,7 +10,7 @@
 #cmakedefine HAVE_UINTMAX_T
 
 /* Define to `int' if <sys/types.h> doesn't define. */
-#cmakedefine pid_t ${pid_t }
+#cmakedefine pid_t ${pid_t}
 
 /* Define intmax_t and uintmax_t if they are not already defined. */
 #if !defined(HAVE_INTMAX_T)

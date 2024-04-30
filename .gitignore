@@ -2,7 +2,7 @@
 .vscode
 
 # Build files
-build/*
+build
 
 # Roms - Not uploading game roms from Nintendo!
 roms/*.gb

@@ -3,9 +3,9 @@
 #include <common.h>
 
 typedef struct {
-    bool paused;
-    bool running;
-    u64 ticks;
+    bool paused;   // Whether the emulator is paused
+    bool running;  // Whether the emulator is running
+    u64 ticks;     // Processor ticks
 } emu_context;
 
 int emu_run(int argc, char **argv);
