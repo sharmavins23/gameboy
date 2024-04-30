@@ -1,6 +1,9 @@
 # Developer files
 .vscode
 
+# Build files
+build/*
+
 # Roms - Not uploading game roms from Nintendo!
 roms/*.gb
 # Test roms can be uploaded, though
