@@ -7,6 +7,14 @@ This project is a follow-along of
 It's a simple project that features a (nearly) cycle-accurate Game Boy emulator,
 functional with a few games.
 
+# References
+
+-   [Game Boy Pan Docs](https://gbdev.io/pandocs/)
+-   [Game Boy CPU (LR35902) Instruction Set and OPCodes](https://www.pastraiser.com/cpu/gameboy/gameboy_opcodes.html)
+-   [Game Boy Programming Manual (Ver. 1.1)](https://archive.org/details/GameBoyProgManVer1.1/page/n85/mode/2up)
+-   [The Cycle-Accurate Game Boy Docs](https://github.com/rockytriton/LLD_gbemu/blob/main/docs/The%20Cycle-Accurate%20Game%20Boy%20Docs.pdf)
+-   [Game Boy: Complete Technical Reference](https://github.com/rockytriton/LLD_gbemu/blob/main/docs/gbctr.pdf)
+
 # License TL;DR
 
 This project is distributed under the MIT license. This is a paraphrasing of a
