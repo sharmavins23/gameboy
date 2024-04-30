@@ -25,8 +25,6 @@ For Linux:
 5. `make`
 6. `gbemu/gbemu ../roms/<RomName>.gb`
 
-# Technical Information
-
 # References
 
 -   [Game Boy Pan Docs](https://gbdev.io/pandocs/)
