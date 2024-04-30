@@ -19,7 +19,7 @@
 u8 bus_read(u16 address) {
     // For now, only read from ROM
     if (address < 0x8000) {
-        return cart_read(address);
+        return readCartridge(address);
     }
 
     NO_IMPL
@@ -28,7 +28,7 @@ u8 bus_read(u16 address) {
 void bus_write(u16 address, u8 value) {
     if (address < 0x8000) {
         // ROM Data
-        cart_write(address, value);
+        writeToCartridge(address, value);
         return;
     }
 
