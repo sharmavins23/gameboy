@@ -115,6 +115,24 @@ u8 readCPUIERegister();
  */
 void setCPUIERegister(u8 value);
 
+/**
+ * Reads a CPU register of one byte only.
+ * Only used for CB operations.
+ *
+ * @param registerType The register type.
+ * @return The value of the register.
+ */
+u8 readCPURegister8(registerType_t registerType);
+
+/**
+ * Writes a value to a CPU register of one byte only.
+ * Only used for CB operations.
+ *
+ * @param registerType The register type.
+ * @param value The value to write.
+ */
+void setCPURegister8(registerType_t registerType, u8 value);
+
 // ===== CPU functions =========================================================
 
 /**

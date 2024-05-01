@@ -91,6 +91,22 @@ static bool is16Bit(registerType_t registerType) {
     return registerType >= RT_AF;
 }
 
+// Lookup table for CB instructions register typings
+registerType_t registerTypeLookup[] = {RT_B, RT_C,  RT_D, RT_E,
+                                       RT_H, RT_HL, RT_A};
+/**
+ * Decodes a register value to get the register type.
+ * Used only in CB instructions.
+ *
+ * @param value The register value.
+ */
+registerType_t decodeRegisterValue(u8 value) {
+    if (value > 0b111) {
+        return RT_NONE;
+    }
+    return registerTypeLookup[value];
+}
+
 // ===== Instruction processors ================================================
 
 /**
@@ -351,7 +367,16 @@ static void procSBC(cpuContext_t *ctx) {
     setCPUFlags(ctx, z, 1, h, c);
 }
 
-static void procAND(cpuContext_t *ctx) { NO_IMPLEMENTATION("procAND()"); }
+/**
+ * Processor for AND instructions.
+ * ANDs the accumulator with the fetched data.
+ *
+ * @param ctx The CPU context.
+ */
+static void procAND(cpuContext_t *ctx) {
+    ctx->registers.a &= ctx->fetchedData;
+    setCPUFlags(ctx, ctx->registers.a == 0, 0, 1, 0);
+}
 
 /**
  * Processor for XOR instructions.
@@ -364,9 +389,30 @@ static void procXOR(cpuContext_t *ctx) {
     setCPUFlags(ctx, ctx->registers.a == 0, 0, 0, 0);
 }
 
-static void procOR(cpuContext_t *ctx) { NO_IMPLEMENTATION("procOR()"); }
+/**
+ * Processor for OR instructions.
+ * ORs the accumulator with the fetched data.
+ *
+ * @param ctx The CPU context.
+ */
+static void procOR(cpuContext_t *ctx) {
+    ctx->registers.a |= ctx->fetchedData & 0xFF;
+    setCPUFlags(ctx, ctx->registers.a == 0, 0, 0, 0);
+}
 
-static void procCP(cpuContext_t *ctx) { NO_IMPLEMENTATION("procCP()"); }
+/**
+ * Processor for CP instructions.
+ * Compares the accumulator with the fetched data.
+ *
+ * @param ctx The CPU context.
+ */
+static void procCP(cpuContext_t *ctx) {
+    int n = (int)ctx->registers.a - (int)ctx->fetchedData;
+    setCPUFlags(
+        ctx, n == 0, 1,
+        ((int)ctx->registers.a & 0x0F) - ((int)ctx->fetchedData & 0x0F) < 0,
+        n < 0);
+}
 
 /**
  * Processor for POP instructions.
@@ -447,7 +493,118 @@ static void procRET(cpuContext_t *ctx) {
     }
 }
 
-static void procCB(cpuContext_t *ctx) { NO_IMPLEMENTATION("procCB()"); }
+/**
+ * Processor for CB instructions.
+ * Processes CB-prefixed instructions, of which there are many.
+ *
+ * @param ctx The CPU context.
+ */
+static void procCB(cpuContext_t *ctx) {
+    // td
+    u8 operation = ctx->fetchedData;
+    registerType_t registerType = decodeRegisterValue(operation & 0b111);
+    u8 bit = (operation >> 3) & 0b111;
+    u8 bitOperation = (operation >> 6) & 0b11;
+    u8 registerValue = readCPURegister8(registerType);
+
+    if (registerType == RT_HL) {
+        emulateCPUCycles(2);  // 2 cycles for reading from memory
+    }
+
+    // Handle the various operations
+    switch (bitOperation) {
+        case 1:  // BIT
+            setCPUFlags(ctx, !(registerValue & (1 << bit)), 0, 1, -1);
+            return;
+        case 2:  // RES
+            registerValue &= ~(1 << bit);
+            setCPURegister8(registerType, registerValue);
+            return;
+        case 3:  // SET
+            registerValue |= (1 << bit);
+            setCPURegister8(registerType, registerValue);
+            return;
+    }
+
+    // If it isn't one of those three values, we need to handle it separately
+    bool flagC = CPUFLAG_CARRYBIT(ctx);
+
+    switch (bit) {
+        case 0: {  // RLC - Rotate left, old bit 7 to carry flag
+            bool setC = false;
+            u8 result = (registerValue << 1) & 0xFF;
+
+            if ((registerValue & (1 << 7)) != 0) {
+                result |= 1;
+                setC = true;
+            }
+
+            setCPURegister8(registerType, result);
+            setCPUFlags(ctx, result == 0, 0, 0, setC);
+            return;
+        }
+        case 1: {  // RRC - Rotate right, old bit 0 to carry flag
+            u8 old = registerValue;
+            registerValue >>= 1;
+            registerValue |= (old & 1) << 7;
+
+            setCPURegister8(registerType, registerValue);
+            setCPUFlags(ctx, !registerValue, 0, 0, old & 1);
+            return;
+        }
+        case 2: {  // RL - Rotate left
+            u8 old = registerValue;
+            registerValue <<= 1;
+            registerValue |= flagC;
+
+            setCPURegister8(registerType, registerValue);
+            setCPUFlags(ctx, !registerValue, 0, 0, old & 0x80);
+            return;
+        }
+        case 3: {  // RR - Rotate right
+            u8 old = registerValue;
+            registerValue >>= 1;
+
+            registerValue |= (flagC << 7);
+
+            setCPURegister8(registerType, registerValue);
+            setCPUFlags(ctx, !registerValue, 0, 0, old & 1);
+            return;
+        }
+        case 4: {  // SLA - Shift left, LSB = 0
+            u8 old = registerValue;
+            registerValue <<= 1;
+
+            setCPURegister8(registerType, registerValue);
+            setCPUFlags(ctx, !registerValue, 0, 0, old & 0x80);
+            return;
+        }
+        case 5: {  // SRA - Shift right into carry, MSB unchanged
+            u8 u = (int8_t)registerValue >> 1;
+            setCPURegister8(registerType, u);
+            setCPUFlags(ctx, !u, 0, 0, registerValue & 1);
+            return;
+        }
+        case 6: {  // SWAP - Swap nibbles
+            registerValue =
+                ((registerValue & 0xF0) >> 4) | ((registerValue & 0xF) << 4);
+            setCPURegister8(registerType, registerValue);
+            setCPUFlags(ctx, registerValue == 0, 0, 0, 0);
+            return;
+        }
+        case 7: {  // SRL - Shift right into carry, MSB = 0
+            u8 u = registerValue >> 1;
+            setCPURegister8(registerType, u);
+            setCPUFlags(ctx, !u, 0, 0, registerValue & 1);
+            return;
+        }
+    }
+
+    // If we get here, we have an invalid operation
+    printf("%sERR:%s Invalid CB operation %s0x%02X%s\n", CRED, CRST, CMAG,
+           operation, CRST);
+    exit(EXIT_FAILURE);
+}
 
 /**
  * Processor for CALL instructions.

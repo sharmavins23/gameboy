@@ -1,6 +1,7 @@
 // * Utility functions for the CPU.
 
 #include <cpu.h>
+#include <bus.h>
 
 // ===== Globals ===============================================================
 
@@ -136,3 +137,80 @@ u8 readCPUIERegister() { return ctx.interruptEnableRegister; }
  * @param value The value to write.
  */
 void setCPUIERegister(u8 value) { ctx.interruptEnableRegister = value; }
+
+/**
+ * Reads a CPU register of one byte only.
+ * Only used for CB operations.
+ *
+ * @param registerType The register type.
+ * @return The value of the register.
+ */
+u8 readCPURegister8(registerType_t registerType) {
+    switch (registerType) {
+        case RT_A:
+            return ctx.registers.a;
+        case RT_F:
+            return ctx.registers.f;
+        case RT_B:
+            return ctx.registers.b;
+        case RT_C:
+            return ctx.registers.c;
+        case RT_D:
+            return ctx.registers.d;
+        case RT_E:
+            return ctx.registers.e;
+        case RT_H:
+            return ctx.registers.h;
+        case RT_L:
+            return ctx.registers.l;
+        case RT_HL:
+            return readBus(readCPURegister(RT_HL));
+        default:
+            printf("%sERR:%s Invalid read for register 8 (type %d).\n", CRED,
+                   CRST, registerType);
+            exit(EXIT_FAILURE);
+    }
+}
+
+/**
+ * Writes a value to a CPU register of one byte only.
+ * Only used for CB operations.
+ *
+ * @param registerType The register type.
+ * @param value The value to write.
+ */
+void setCPURegister8(registerType_t registerType, u8 value) {
+    switch (registerType) {
+        case RT_A:
+            ctx.registers.a = value & 0xFF;
+            return;
+        case RT_F:
+            ctx.registers.f = value & 0xFF;
+            return;
+        case RT_B:
+            ctx.registers.b = value & 0xFF;
+            return;
+        case RT_C:
+            ctx.registers.c = value & 0xFF;
+            return;
+        case RT_D:
+            ctx.registers.d = value & 0xFF;
+            return;
+        case RT_E:
+            ctx.registers.e = value & 0xFF;
+            return;
+        case RT_H:
+            ctx.registers.h = value & 0xFF;
+            return;
+        case RT_L:
+            ctx.registers.l = value & 0xFF;
+            return;
+        case RT_HL:
+            writeBus(readCPURegister(RT_HL), value);
+            return;
+        default:
+            printf("%sERR:%s Invalid set for register 8 (type %d).\n", CRED,
+                   CRST, registerType);
+            exit(EXIT_FAILURE);
+    }
+}
