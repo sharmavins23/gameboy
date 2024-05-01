@@ -141,6 +141,20 @@ static void procLD(cpuContext_t *ctx) {
     setCPURegister(ctx->currentInstruction->register1, ctx->fetchedData);
 }
 
+static void procINC(cpuContext_t *ctx) { NO_IMPLEMENTATION("procINC()"); }
+
+static void procDEC(cpuContext_t *ctx) { NO_IMPLEMENTATION("procDEC()"); }
+
+static void procRLCA(cpuContext_t *ctx) { NO_IMPLEMENTATION("procRLCA()"); }
+
+static void procADD(cpuContext_t *ctx) { NO_IMPLEMENTATION("procADD()"); }
+
+static void procRRCA(cpuContext_t *ctx) { NO_IMPLEMENTATION("procRRCA()"); }
+
+static void procSTOP(cpuContext_t *ctx) { NO_IMPLEMENTATION("procSTOP()"); }
+
+static void procRLA(cpuContext_t *ctx) { NO_IMPLEMENTATION("procRLA()"); }
+
 /**
  * Processor for JR instructions.
  * Jumps to a location relative to the current program counter.
@@ -153,6 +167,26 @@ static void procJR(cpuContext_t *ctx) {
     goToAddress(ctx, addr, false);
 }
 
+static void procRRA(cpuContext_t *ctx) { NO_IMPLEMENTATION("procRRA()"); }
+
+static void procDAA(cpuContext_t *ctx) { NO_IMPLEMENTATION("procDAA()"); }
+
+static void procCPL(cpuContext_t *ctx) { NO_IMPLEMENTATION("procCPL()"); }
+
+static void procSCF(cpuContext_t *ctx) { NO_IMPLEMENTATION("procSCF()"); }
+
+static void procCCF(cpuContext_t *ctx) { NO_IMPLEMENTATION("procCCF()"); }
+
+static void procHALT(cpuContext_t *ctx) { NO_IMPLEMENTATION("procHALT()"); }
+
+static void procADC(cpuContext_t *ctx) { NO_IMPLEMENTATION("procADC()"); }
+
+static void procSUB(cpuContext_t *ctx) { NO_IMPLEMENTATION("procSUB()"); }
+
+static void procSBC(cpuContext_t *ctx) { NO_IMPLEMENTATION("procSBC()"); }
+
+static void procAND(cpuContext_t *ctx) { NO_IMPLEMENTATION("procAND()"); }
+
 /**
  * Processor for XOR instructions.
  * XORs the accumulator with the fetched data.
@@ -163,6 +197,10 @@ static void procXOR(cpuContext_t *ctx) {
     ctx->registers.a ^= ctx->fetchedData & 0xFF;
     setCPUFlags(ctx, ctx->registers.a == 0, 0, 0, 0);
 }
+
+static void procOR(cpuContext_t *ctx) { NO_IMPLEMENTATION("procOR()"); }
+
+static void procCP(cpuContext_t *ctx) { NO_IMPLEMENTATION("procCP()"); }
 
 /**
  * Processor for POP instructions.
@@ -243,6 +281,8 @@ static void procRET(cpuContext_t *ctx) {
     }
 }
 
+static void procCB(cpuContext_t *ctx) { NO_IMPLEMENTATION("procCB()"); }
+
 /**
  * Processor for CALL instructions.
  * Calls a subroutine if a condition is met.
@@ -282,6 +322,8 @@ static void procLDH(cpuContext_t *ctx) {
     emulateCPUCycles(1);  // 1 cycle for bus reading
 }
 
+static void procJPHL(cpuContext_t *ctx) { NO_IMPLEMENTATION("procJPHL()"); }
+
 /**
  * Processor for DI instructions.
  * Disables interrupts.
@@ -290,29 +332,56 @@ static void procLDH(cpuContext_t *ctx) {
  */
 static void procDI(cpuContext_t *ctx) { ctx->masterInterruptEnabled = false; }
 
+static void procEI(cpuContext_t *ctx) { NO_IMPLEMENTATION("procEI()"); }
+
 static void procRST(cpuContext_t *ctx) {
     goToAddress(ctx, ctx->currentInstruction->param, true);
 }
+
+static void procERR(cpuContext_t *ctx) { NO_IMPLEMENTATION("procERR()"); }
+
+static void procRLC(cpuContext_t *ctx) { NO_IMPLEMENTATION("procRLC()"); }
+
+static void procRRC(cpuContext_t *ctx) { NO_IMPLEMENTATION("procRRC()"); }
+
+static void procRL(cpuContext_t *ctx) { NO_IMPLEMENTATION("procRL()"); }
+
+static void procRR(cpuContext_t *ctx) { NO_IMPLEMENTATION("procRR()"); }
+
+static void procSLA(cpuContext_t *ctx) { NO_IMPLEMENTATION("procSLA()"); }
+
+static void procSRA(cpuContext_t *ctx) { NO_IMPLEMENTATION("procSRA()"); }
+
+static void procSWAP(cpuContext_t *ctx) { NO_IMPLEMENTATION("procSWAP()"); }
+
+static void procSRL(cpuContext_t *ctx) { NO_IMPLEMENTATION("procSRL()"); }
+
+static void procBIT(cpuContext_t *ctx) { NO_IMPLEMENTATION("procBIT()"); }
+
+static void procRES(cpuContext_t *ctx) { NO_IMPLEMENTATION("procRES()"); }
+
+static void procSET(cpuContext_t *ctx) { NO_IMPLEMENTATION("procSET()"); }
 
 // ===== Instruction processor array ===========================================
 
 // Array of function pointers for processing instructions
 static IN_PROC processors[] = {
-    [IN_NONE] = procNone,  // IN_NONE
-    [IN_NOP] = procNOP,    // NOP inst
-    [IN_LD] = procLD,      // Load inst
-    [IN_JR] = procJR,      // Jump relative inst
-    [IN_XOR] = procXOR,    // XOR inst
-    [IN_POP] = procPOP,    // Pop inst
-    [IN_JP] = procJP,      // Jump inst
-    [IN_PUSH] = procPUSH,  // Push inst
-    [IN_RET] = procRET,    // Return inst
-    [IN_CALL] = procCALL,  // Call inst
-    [IN_RETI] = procRETI,  // Return from interrupt
-    [IN_LDH] = procLDH,    // Load high inst
-    [IN_DI] = procDI,      // Sets master disabled
-    [IN_RST] = procRST     // Reset inst
-};
+    [IN_NONE] = procNone, [IN_NOP] = procNOP,   [IN_LD] = procLD,
+    [IN_INC] = procINC,   [IN_DEC] = procDEC,   [IN_RLCA] = procRLCA,
+    [IN_ADD] = procADD,   [IN_RRCA] = procRRCA, [IN_STOP] = procSTOP,
+    [IN_RLA] = procRLA,   [IN_JR] = procJR,     [IN_RRA] = procRRA,
+    [IN_DAA] = procDAA,   [IN_CPL] = procCPL,   [IN_SCF] = procSCF,
+    [IN_CCF] = procCCF,   [IN_HALT] = procHALT, [IN_ADC] = procADC,
+    [IN_SUB] = procSUB,   [IN_SBC] = procSBC,   [IN_AND] = procAND,
+    [IN_XOR] = procXOR,   [IN_OR] = procOR,     [IN_CP] = procCP,
+    [IN_POP] = procPOP,   [IN_JP] = procJP,     [IN_PUSH] = procPUSH,
+    [IN_RET] = procRET,   [IN_CB] = procCB,     [IN_CALL] = procCALL,
+    [IN_RETI] = procRETI, [IN_LDH] = procLDH,   [IN_JPHL] = procJPHL,
+    [IN_DI] = procDI,     [IN_EI] = procEI,     [IN_RST] = procRST,
+    [IN_ERR] = procERR,   [IN_RLC] = procRLC,   [IN_RRC] = procRRC,
+    [IN_RL] = procRL,     [IN_RR] = procRR,     [IN_SLA] = procSLA,
+    [IN_SRA] = procSRA,   [IN_SWAP] = procSWAP, [IN_SRL] = procSRL,
+    [IN_BIT] = procBIT,   [IN_RES] = procRES,   [IN_SET] = procSET};
 
 /**
  * Gets the processor for a given instruction type.
