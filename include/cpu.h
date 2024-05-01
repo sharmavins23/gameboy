@@ -169,6 +169,10 @@ u8 getCPUInterruptFlags();
  */
 void setCPUInterruptFlags(u8 flags);
 
+// ===== Instruction utility functions =========================================
+
+void instructionToString(cpuContext_t *ctx, char *str);
+
 // ===== CPU functions =========================================================
 
 /**

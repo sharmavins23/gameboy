@@ -123,6 +123,18 @@ typedef struct {
     u8 param;
 } instruction_t;
 
+/**
+ * Gets an instruction object from an opcode.
+ *
+ * @param opcode The opcode.
+ * @return The instruction object.
+ */
 instruction_t *getInstructionFromOpcode(u8 opcode);
 
+/**
+ * Gets a human-readable instruction name from an instruction type.
+ *
+ * @param t The instruction object
+ * @return The instruction name
+ */
 char *getInstructionName(instructionType_t instructionType);

@@ -56,14 +56,14 @@ void stepCPU() {
         fetchInstruction();
         fetchData();
 
-        printf("PC %s0x%04X%s: %s%-5s%s (%s%02X%s %s%02X %02X%s) | ", CMAG, pc,
-               CRST, CBLU, getInstructionName(ctx.currentInstruction->type),
-               CRST, CCYN, ctx.currentOpcode, CRST, CMAG, readBus(pc + 1),
-               readBus(pc + 2), CRST);
+        char instruction[16];
+        instructionToString(&ctx, instruction);
+        printf("PC %s0x%04X%s: %s%-16s%s (%s%02X%s %s%02X %02X%s) | ", CMAG, pc,
+               CRST, CBLU, instruction, CRST, CCYN, ctx.currentOpcode, CRST,
+               CMAG, readBus(pc + 1), readBus(pc + 2), CRST);
         printf(
-            "A=%s0x%02X%s BC=%s0x%02X%02X%s DE=%s0x%02X%02X%s "
-            "HL=%s0x%02X%02X%s "
-            "SP=%s0x%04X%s | ",
+            "A=%s%02X%s BC=%s%02X%02X%s DE=%s%02X%02X%s HL=%s%02X%02X%s "
+            "SP=%s%04X%s | ",
             CMAG, ctx.registers.a, CRST, CMAG, ctx.registers.b, ctx.registers.c,
             CRST, CMAG, ctx.registers.d, ctx.registers.e, CRST, CMAG,
             ctx.registers.h, ctx.registers.l, CRST, CMAG, ctx.registers.sp,
@@ -73,7 +73,7 @@ void stepCPU() {
                 BIT(ctx.registers.f, 6) ? 'N' : '-',
                 BIT(ctx.registers.f, 5) ? 'H' : '-',
                 BIT(ctx.registers.f, 4) ? 'C' : '-');
-        printf("F=%s0x%02X%s (%s%s%s) | ", CMAG, ctx.registers.f, CRST, CBLU,
+        printf("F=%s%02X%s (%s%s%s) | ", CMAG, ctx.registers.f, CRST, CBLU,
                flags, CRST);
         // Also print emulator clock cycles
         printf("%08lx\n", getEMUContext()->ticks);
