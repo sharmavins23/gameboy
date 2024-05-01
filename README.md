@@ -8,7 +8,9 @@ It's a simple project that features a (nearly) cycle-accurate Game Boy emulator,
 functional with a few games.
 
 Notably, it features some serious refactoring as well as improvements to logging
-and robustness over the original.
+and robustness over the original. As the original is both fairly wasteful (in
+redundancy) and error-prone, I attempted to test and mitigate these particular
+problems with my own implementation.
 
 # Setup
 

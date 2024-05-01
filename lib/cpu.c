@@ -15,7 +15,7 @@ cpuContext_t ctx = {0};
  * Fetches the next instruction from memory.
  */
 static void fetchInstruction() {
-    ctx.currentOpcode = readFromBus(ctx.registers.pc++);
+    ctx.currentOpcode = readBus(ctx.registers.pc++);
     ctx.currentInstruction = getInstructionFromOpcode(ctx.currentOpcode);
 }
 
@@ -57,8 +57,8 @@ void stepCPU() {
 
         printf("PC %s0x%04X%s: %s%-7s%s (%s%02X%s %s%02X %02X%s) | ", CMAG, pc,
                CRST, CBLU, getInstructionName(ctx.currentInstruction->type),
-               CRST, CCYN, ctx.currentOpcode, CRST, CMAG, readFromBus(pc + 1),
-               readFromBus(pc + 2), CRST);
+               CRST, CCYN, ctx.currentOpcode, CRST, CMAG, readBus(pc + 1),
+               readBus(pc + 2), CRST);
         printf(
             "AF=%s0x%04X%s BC=%s0x%04X%s DE=%s0x%04X%s HL=%s0x%04X%s "
             "SP=%s0x%04X%s\n",

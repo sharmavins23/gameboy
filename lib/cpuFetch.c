@@ -42,7 +42,7 @@ void fetchData() {
 
         // 8-bit bus data into register
         case AM_R_D8:
-            ctx.fetchedData = readFromBus(ctx.registers.pc);
+            ctx.fetchedData = readBus(ctx.registers.pc);
             emulateCPUCycles(1);  // 1 CPU cycle for bus reading
             ctx.registers.pc++;
 
@@ -50,9 +50,10 @@ void fetchData() {
 
         // 16-bit bus data into register
         case AM_R_D16: {
-            u16 lo = readFromBus(ctx.registers.pc);
+            // Separated for cycle accuracy
+            u16 lo = readBus(ctx.registers.pc);
             emulateCPUCycles(1);
-            u16 hi = readFromBus(ctx.registers.pc + 1);
+            u16 hi = readBus(ctx.registers.pc + 1);
             emulateCPUCycles(1);
 
             ctx.fetchedData = lo | (hi << 8);
@@ -63,7 +64,7 @@ void fetchData() {
 
         // 8-bit address into register
         case AM_R_A8: {
-            ctx.fetchedData = readFromBus(ctx.registers.pc);
+            ctx.fetchedData = readBus(ctx.registers.pc);
             emulateCPUCycles(1);  // 1 CPU cycle for bus reading
             ctx.registers.pc++;
             return;
@@ -71,15 +72,16 @@ void fetchData() {
 
         // 16-bit address into register
         case AM_R_A16: {
-            u16 lo = readFromBus(ctx.registers.pc);
+            // Separated for cycle accuracy
+            u16 lo = readBus(ctx.registers.pc);
             emulateCPUCycles(1);
-            u16 hi = readFromBus(ctx.registers.pc + 1);
+            u16 hi = readBus(ctx.registers.pc + 1);
             emulateCPUCycles(1);
 
             u16 addr = lo | (hi << 8);
 
             ctx.registers.pc += 2;
-            ctx.fetchedData = readFromBus(addr);
+            ctx.fetchedData = readBus(addr);
             emulateCPUCycles(1);  // 1 CPU cycle for bus reading
             return;
         }
@@ -92,7 +94,7 @@ void fetchData() {
                 addr |= 0xFF00;
             }
 
-            ctx.fetchedData = readFromBus(addr);
+            ctx.fetchedData = readBus(addr);
             emulateCPUCycles(1);  // 1 CPU cycle for bus reading
 
             return;
@@ -100,7 +102,7 @@ void fetchData() {
 
         // HL register into register, then increment
         case AM_R_HLI: {
-            ctx.fetchedData = readFromBus(ctx.currentInstruction->register2);
+            ctx.fetchedData = readBus(ctx.currentInstruction->register2);
             emulateCPUCycles(1);  // 1 CPU cycle for bus reading
             setCPURegister(RT_HL, readCPURegister(RT_HL) + 1);
             return;
@@ -108,7 +110,7 @@ void fetchData() {
 
         // HL register into register, then decrement
         case AM_R_HLD: {
-            ctx.fetchedData = readFromBus(ctx.currentInstruction->register2);
+            ctx.fetchedData = readBus(ctx.currentInstruction->register2);
             emulateCPUCycles(1);  // 1 CPU cycle for bus reading
             setCPURegister(RT_HL, readCPURegister(RT_HL) - 1);
             return;
@@ -120,7 +122,7 @@ void fetchData() {
                 readCPURegister(ctx.currentInstruction->register1);
             ctx.destinationIsMemory = true;
             ctx.fetchedData =
-                readFromBus(readCPURegister(ctx.currentInstruction->register1));
+                readBus(readCPURegister(ctx.currentInstruction->register1));
             emulateCPUCycles(1);  // 1 CPU cycle for bus reading
             return;
         }
@@ -142,7 +144,7 @@ void fetchData() {
 
         // 8-bit data into memory location (reference in register)
         case AM_MR_D8: {
-            ctx.fetchedData = readFromBus(ctx.registers.pc);
+            ctx.fetchedData = readBus(ctx.registers.pc);
             emulateCPUCycles(1);  // 1 CPU cycle for bus reading
             ctx.registers.pc++;
             ctx.memoryDestination =
@@ -153,7 +155,7 @@ void fetchData() {
 
         // Stack pointer into HL register, increment by R8
         case AM_HL_SPR: {
-            ctx.fetchedData = readFromBus(ctx.registers.pc);
+            ctx.fetchedData = readBus(ctx.registers.pc);
             emulateCPUCycles(1);  // 1 CPU cycle for bus reading
             ctx.registers.pc++;
             return;
@@ -181,16 +183,17 @@ void fetchData() {
 
         // 8-bit data
         case AM_D8:
-            ctx.fetchedData = readFromBus(ctx.registers.pc);
+            ctx.fetchedData = readBus(ctx.registers.pc);
             emulateCPUCycles(1);  // 1 CPU cycle for bus reading
             ctx.registers.pc++;
             return;
 
         // 16-bit data
         case AM_D16: {
-            u16 lo = readFromBus(ctx.registers.pc);
+            // Separated for cycle accuracy
+            u16 lo = readBus(ctx.registers.pc);
             emulateCPUCycles(1);
-            u16 hi = readFromBus(ctx.registers.pc + 1);
+            u16 hi = readBus(ctx.registers.pc + 1);
             emulateCPUCycles(1);
 
             ctx.fetchedData = lo | (hi << 8);
@@ -201,9 +204,9 @@ void fetchData() {
 
         // Register into 16-bit address
         case AM_D16_R: {
-            u16 lo = readFromBus(ctx.registers.pc);
+            u16 lo = readBus(ctx.registers.pc);
             emulateCPUCycles(1);
-            u16 hi = readFromBus(ctx.registers.pc + 1);
+            u16 hi = readBus(ctx.registers.pc + 1);
             emulateCPUCycles(1);
 
             ctx.memoryDestination = lo | (hi << 8);
@@ -217,7 +220,7 @@ void fetchData() {
 
         // Register into 8-bit address
         case AM_A8_R: {
-            ctx.memoryDestination = readFromBus(ctx.registers.pc) | 0xFF00;
+            ctx.memoryDestination = readBus(ctx.registers.pc) | 0xFF00;
             emulateCPUCycles(1);  // 1 CPU cycle for bus reading
             ctx.destinationIsMemory = true;
             ctx.registers.pc++;
@@ -226,9 +229,10 @@ void fetchData() {
 
         // Register to 16-bit address
         case AM_A16_R: {
-            u16 lo = readFromBus(ctx.registers.pc);
+            // Separated for cycle accuracy
+            u16 lo = readBus(ctx.registers.pc);
             emulateCPUCycles(1);
-            u16 hi = readFromBus(ctx.registers.pc + 1);
+            u16 hi = readBus(ctx.registers.pc + 1);
             emulateCPUCycles(1);
 
             ctx.memoryDestination = lo | (hi << 8);

@@ -117,6 +117,13 @@ void setCPURegister(registerType_t registerType, u16 value) {
 }
 
 /**
+ * Gets the registers from the CPU.
+ *
+ * @return The CPU registers.
+ */
+cpuRegisters_t *getCPURegisters() { return &ctx.registers; }
+
+/**
  * Reads the CPU Interrupt Enable (IE) register.
  *
  * @return The value of the IE register.
