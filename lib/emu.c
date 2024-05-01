@@ -100,7 +100,15 @@ int runEmulator(int argc, char **argv) {
     }
 
     // Now simply poll the context to see if it's alive
+    bool stopEarly = true;  // ! DBG
+    int stopI = 10;
+    int i = 0;
     while (!ctx.die) {
+        // ! DBG
+        if (stopEarly && i++ > stopI) {
+            break;
+        }
+
         usleep(1000);  // Poll every 1ms
         handleUIEvents();
     }

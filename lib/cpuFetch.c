@@ -90,7 +90,7 @@ void fetchData() {
         case AM_R_MR: {
             u16 addr = readCPURegister(ctx.currentInstruction->register2);
 
-            if (ctx.currentInstruction->register1 == RT_C) {
+            if (ctx.currentInstruction->register2 == RT_C) {
                 addr |= 0xFF00;
             }
 
@@ -102,7 +102,8 @@ void fetchData() {
 
         // HL register into register, then increment
         case AM_R_HLI: {
-            ctx.fetchedData = readBus(ctx.currentInstruction->register2);
+            ctx.fetchedData =
+                readBus(readCPURegister(ctx.currentInstruction->register2));
             emulateCPUCycles(1);  // 1 CPU cycle for bus reading
             setCPURegister(RT_HL, readCPURegister(RT_HL) + 1);
             return;

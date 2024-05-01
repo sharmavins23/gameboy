@@ -139,14 +139,14 @@ static void procNOP(cpuContext_t *ctx) {
 static void procLD(cpuContext_t *ctx) {
     if (ctx->destinationIsMemory) {
         // If a 16-bit register...
-        if (ctx->currentInstruction->register2 >= RT_AF) {
+        if (is16Bit(ctx->currentInstruction->register2)) {
             writeBus16(ctx->memoryDestination, ctx->fetchedData);
-            // ! Why 1 cycle and not 2?
-            emulateCPUCycles(1);  // 1 cycle for writing to bus
+            emulateCPUCycles(1);  // 1 extra cycle for writing to bus
         } else {
             writeBus(ctx->memoryDestination, ctx->fetchedData);
-            emulateCPUCycles(1);  // 1 cycle for writing to bus
         }
+        emulateCPUCycles(1);  // 1 cycle for writing to bus
+        return;
     }
 
     if (ctx->currentInstruction->mode == AM_HL_SPR) {
@@ -155,13 +155,15 @@ static void procLD(cpuContext_t *ctx) {
                    0x10;
         u8 cflag =
             (readCPURegister(ctx->currentInstruction->register2) & 0xFF) +
-                (ctx->fetchedData & 0xF) >=
+                (ctx->fetchedData & 0xFF) >=
             0x100;
 
         setCPUFlags(ctx, 0, 0, hflag, cflag);
         setCPURegister(ctx->currentInstruction->register1,
                        readCPURegister(ctx->currentInstruction->register2) +
                            (char)ctx->fetchedData);
+
+        return;
     }
 
     setCPURegister(ctx->currentInstruction->register1, ctx->fetchedData);

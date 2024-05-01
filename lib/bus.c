@@ -4,6 +4,7 @@
 #include <cart.h>
 #include <cpu.h>
 #include <ram.h>
+#include <io.h>
 
 // * Memory map
 // 0x0000 - 0x3FFF : ROM Bank 0
@@ -44,7 +45,7 @@ u8 readBus(u16 address) {
     } else if (address < 0xFF00) {  // Reserved - Unusable
         return 0;
     } else if (address < 0xFF80) {  // I/O Registers
-        NO_IMPLEMENTATION("readBus() for I/O Registers");
+        return readIO(address);
     } else if (address == 0xFFFF) {  // CPU Interrupt Enable Register
         return readCPUIERegister();
     } else {  // High RAM
@@ -87,7 +88,7 @@ void writeBus(u16 address, u8 value) {
     } else if (address < 0xFF00) {  // Reserved - Unusable
         return;
     } else if (address < 0xFF80) {  // I/O Registers
-        NO_IMPLEMENTATION("writeBus() for I/O Registers");
+        return writeIO(address, value);
     } else if (address == 0xFFFF) {  // CPU Interrupt Enable Register
         return setCPUIERegister(value);
     } else {
