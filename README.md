@@ -12,7 +12,7 @@ and robustness over the original. As the original is both fairly wasteful (in
 redundancy) and error-prone, I attempted to test and mitigate these particular
 problems with my own implementation.
 
-# Setup
+## Setup
 
 The project was originally created using WSL2, though it can run on Windows with
 proper setup (see the original repository for the DLL files - DLLs can simply be
@@ -27,7 +27,12 @@ For Linux:
 5. `make`
 6. `gbemu/gbemu ../roms/<RomName>.gb`
 
-# References
+## Current Progress
+
+The emulator's CPU is... Mostly running. So far, I am up to date with the
+guide's part 09.
+
+## References
 
 -   [Game Boy Pan Docs](https://gbdev.io/pandocs/)
 -   [Game Boy CPU (LR35902) Instruction Set and OPCodes](https://www.pastraiser.com/cpu/gameboy/gameboy_opcodes.html)
