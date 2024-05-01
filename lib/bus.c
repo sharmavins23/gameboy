@@ -33,7 +33,8 @@ u8 readBus(u16 address) {
     if (address < 0x8000) {  // ROM data
         return readCartridge(address);
     } else if (address < 0xA000) {  // Character/Map data
-        NO_IMPLEMENTATION("readBus() for Character/Map data");
+        // TODO - Not terminating to test current CPU
+        // NO_IMPLEMENTATION("readBus() for Character/Map data");
     } else if (address < 0xC000) {  // Cartridge RAM
         return readCartridge(address);
     } else if (address < 0xE000) {  // Working RAM
@@ -41,7 +42,8 @@ u8 readBus(u16 address) {
     } else if (address < 0xFE00) {  // Reserved - Echo RAM
         return 0;
     } else if (address < 0xFEA0) {  // Object Attribute Memory
-        NO_IMPLEMENTATION("readBus() for Object Attribute Memory");
+        // TODO - Not terminating to test current CPU
+        // NO_IMPLEMENTATION("readBus() for Object Attribute Memory");
     } else if (address < 0xFF00) {  // Reserved - Unusable
         return 0;
     } else if (address < 0xFF80) {  // I/O Registers
@@ -76,7 +78,8 @@ void writeBus(u16 address, u8 value) {
     if (address < 0x8000) {  // ROM data
         return writeToCartridge(address, value);
     } else if (address < 0xA000) {  // Character/Map data
-        NO_IMPLEMENTATION("writeBus() for Character/Map data");
+        // TODO - Not terminating to test current CPU
+        // NO_IMPLEMENTATION("writeBus() for Character/Map data");
     } else if (address < 0xC000) {  // Cartridge RAM
         return writeToCartridge(address, value);
     } else if (address < 0xE000) {  // Working RAM
@@ -84,7 +87,8 @@ void writeBus(u16 address, u8 value) {
     } else if (address < 0xFE00) {  // Reserved - Echo RAM
         return;
     } else if (address < 0xFEA0) {  // Object Attribute Memory
-        NO_IMPLEMENTATION("writeBus() for Object Attribute Memory");
+        // TODO - Not terminating to test current CPU
+        // NO_IMPLEMENTATION("writeBus() for Object Attribute Memory");
     } else if (address < 0xFF00) {  // Reserved - Unusable
         return;
     } else if (address < 0xFF80) {  // I/O Registers
