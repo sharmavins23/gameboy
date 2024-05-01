@@ -10,3 +10,5 @@ roms/*.gb
 !roms/cpu_instrs.gb
 !roms/dmg-acid2.gb
 !roms/mem_timing.gb
+!roms/0*.gb
+!roms/1*.gb
