@@ -111,7 +111,8 @@ void fetchData() {
 
         // HL register into register, then decrement
         case AM_R_HLD: {
-            ctx.fetchedData = readBus(ctx.currentInstruction->register2);
+            ctx.fetchedData =
+                readBus(readCPURegister(ctx.currentInstruction->register2));
             emulateCPUCycles(1);  // 1 CPU cycle for bus reading
             setCPURegister(RT_HL, readCPURegister(RT_HL) - 1);
             return;
@@ -222,8 +223,8 @@ void fetchData() {
         // Register into 8-bit address
         case AM_A8_R: {
             ctx.memoryDestination = readBus(ctx.registers.pc) | 0xFF00;
-            emulateCPUCycles(1);  // 1 CPU cycle for bus reading
             ctx.destinationIsMemory = true;
+            emulateCPUCycles(1);  // 1 CPU cycle for bus reading
             ctx.registers.pc++;
             return;
         }

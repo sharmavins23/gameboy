@@ -33,7 +33,7 @@ static inline void NO_IMPLEMENTATION(char* feature) {
         printf("%sERR:%s Feature %s%s%s not yet implemented.\n", CRED, CRST,
                CBLU, feature, CRST);
     // ! DBG DISABLE TO CONTINUE ON NI - NOT RECOMMENDED
-    exit(EXIT_FAILURE);
+    // exit(EXIT_FAILURE);
 }
 
 /**

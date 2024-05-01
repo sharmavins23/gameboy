@@ -227,10 +227,9 @@ static void procDEC(cpuContext_t *ctx) {
     // If the opcode's bottom 2 are set, skip
     if ((ctx->currentOpcode & 0x0B) == 0x0B) {
         return;
-        printf("Returning early...");
     }
 
-    setCPUFlags(ctx, value == 0, 1, (value & 0xF) == 0x0F, -1);
+    setCPUFlags(ctx, value == 0, 1, (value & 0x0F) == 0x0F, -1);
 }
 
 /**
@@ -274,8 +273,8 @@ static void procADD(cpuContext_t *ctx) {
         h = (readCPURegister(ctx->currentInstruction->register1) & 0xFFF) +
                 (ctx->fetchedData & 0xFFF) >=
             0x1000;
-        u32 n = ((u32)readCPURegister(ctx->currentInstruction->register1) +
-                 (u32)ctx->fetchedData);
+        u32 n = ((u32)readCPURegister(ctx->currentInstruction->register1)) +
+                ((u32)ctx->fetchedData);
         c = n >= 0x10000;
     }
 
@@ -289,7 +288,7 @@ static void procADD(cpuContext_t *ctx) {
                 (ctx->fetchedData & 0xF) >=
             0x10;
         c = (int)(readCPURegister(ctx->currentInstruction->register1) & 0xFF) +
-                (int)(ctx->fetchedData & 0xFF) >
+                (int)(ctx->fetchedData & 0xFF) >=
             0x100;
     }
 
@@ -335,7 +334,7 @@ static void procRLA(cpuContext_t *ctx) {
  * @param ctx The CPU context.
  */
 static void procJR(cpuContext_t *ctx) {
-    char rel = (char)(ctx->fetchedData & 0xFF);
+    int8_t rel = (char)(ctx->fetchedData & 0xFF);
     u16 addr = ctx->registers.pc + rel;
     goToAddress(ctx, addr, false);
 }
@@ -350,7 +349,8 @@ static void procRRA(cpuContext_t *ctx) {
     u8 carry = CPUFLAG_CARRYBIT(ctx);
     u8 newCarry = ctx->registers.a & 1;
 
-    ctx->registers.a = (ctx->registers.a >> 1) | (carry << 7);
+    ctx->registers.a >>= 1;
+    ctx->registers.a |= (carry << 7);
 
     setCPUFlags(ctx, 0, 0, 0, newCarry);
 }
@@ -378,7 +378,7 @@ static void procDAA(cpuContext_t *ctx) {
 
     ctx->registers.a += CPUFLAG_NEGATIVEBIT(ctx) ? -u : u;
 
-    setCPUFlags(ctx, ctx->registers.a == 0, 0, 0, fc);
+    setCPUFlags(ctx, ctx->registers.a == 0, -1, 0, fc);
 }
 
 /**
@@ -425,15 +425,14 @@ static void procHALT(cpuContext_t *ctx) { ctx->halted = true; }
  * @param ctx The CPU context.
  */
 static void procADC(cpuContext_t *ctx) {
-    ctx->registers.a =
-        (ctx->registers.a + ctx->fetchedData + CPUFLAG_CARRYBIT(ctx)) & 0xFF;
+    u16 u = ctx->fetchedData;
+    u16 a = ctx->registers.a;
+    u16 c = CPUFLAG_CARRYBIT(ctx);
 
-    setCPUFlags(
-        ctx, ctx->registers.a == 0, 0,
-        (ctx->registers.a & 0xF) + (ctx->fetchedData & 0xF) +
-                CPUFLAG_CARRYBIT(ctx) >
-            0xF,
-        (ctx->registers.a + ctx->fetchedData + CPUFLAG_CARRYBIT(ctx)) > 0xFF);
+    ctx->registers.a = (a + u + c) & 0xFF;
+
+    setCPUFlags(ctx, ctx->registers.a == 0, 0, (a & 0xF) + (u & 0xF) + c > 0xF,
+                a + u + c > 0xFF);
 }
 
 /**
@@ -450,8 +449,8 @@ static void procSUB(cpuContext_t *ctx) {
     int h = ((int)readCPURegister(ctx->currentInstruction->register1) & 0xF) -
                 ((int)ctx->fetchedData & 0xF) <
             0;
-    int c = (int)readCPURegister(ctx->currentInstruction->register1) -
-                (int)ctx->fetchedData <
+    int c = ((int)readCPURegister(ctx->currentInstruction->register1)) -
+                ((int)ctx->fetchedData) <
             0;
 
     setCPURegister(ctx->currentInstruction->register1, value);
@@ -565,7 +564,7 @@ static void procPUSH(cpuContext_t *ctx) {
     emulateCPUCycles(1);  // 1 cycle for reading from register
     pushStack(hi);
 
-    u16 lo = readCPURegister(ctx->currentInstruction->register2) & 0xFF;
+    u16 lo = readCPURegister(ctx->currentInstruction->register1) & 0xFF;
     emulateCPUCycles(1);  // 1 cycle for reading from register
     pushStack(lo);
 
@@ -652,7 +651,7 @@ static void procCB(cpuContext_t *ctx) {
         case 1: {  // RRC - Rotate right, old bit 0 to carry flag
             u8 old = registerValue;
             registerValue >>= 1;
-            registerValue |= (old & 1) << 7;
+            registerValue |= (old << 7);
 
             setCPURegister8(registerType, registerValue);
             setCPUFlags(ctx, !registerValue, 0, 0, old & 1);
@@ -664,7 +663,7 @@ static void procCB(cpuContext_t *ctx) {
             registerValue |= flagC;
 
             setCPURegister8(registerType, registerValue);
-            setCPUFlags(ctx, !registerValue, 0, 0, old & 0x80);
+            setCPUFlags(ctx, !registerValue, 0, 0, !!(old & 0x80));
             return;
         }
         case 3: {  // RR - Rotate right
@@ -682,7 +681,7 @@ static void procCB(cpuContext_t *ctx) {
             registerValue <<= 1;
 
             setCPURegister8(registerType, registerValue);
-            setCPUFlags(ctx, !registerValue, 0, 0, old & 0x80);
+            setCPUFlags(ctx, !registerValue, 0, 0, !!(old & 0x80));
             return;
         }
         case 5: {  // SRA - Shift right into carry, MSB unchanged

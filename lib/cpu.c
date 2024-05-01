@@ -66,6 +66,7 @@ void stepCPU() {
         u16 pc = ctx.registers.pc;
 
         fetchInstruction();
+        emulateCPUCycles(1);  // 1 CPU cycle to fetch
         fetchData();
 
         char instruction[16];

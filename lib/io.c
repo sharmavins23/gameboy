@@ -23,7 +23,9 @@ u8 readIO(u16 address) {
         return serialData[1];
     }
 
-    NO_IMPLEMENTATION("readIO()");
+    printf("%sERR:%s Unhandled I/O read at address 0x%04X\n", CRED, CRST,
+           address);
+    return 0;
 }
 
 /**
@@ -36,10 +38,13 @@ void writeIO(u16 address, u8 value) {
     if (address == 0xFF01) {
         serialData[0] = value;
         return;
-    } else if (address == 0xFF02) {
+    }
+
+    if (address == 0xFF02) {
         serialData[1] = value;
         return;
     }
 
-    NO_IMPLEMENTATION("writeIO()");
+    printf("%sERR:%s Unhandled I/O write at address 0x%04X\n", CRED, CRST,
+           address);
 }

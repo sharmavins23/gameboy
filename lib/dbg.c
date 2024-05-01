@@ -15,7 +15,7 @@ static int messageSize = 0;
  * Updates the debug message with the latest serial data.
  */
 void debugUpdate() {
-    if (readBus(0xFF02) & 0x81) {
+    if (readBus(0xFF02) == 0x81) {
         char c = readBus(0xFF01);
         debugMessage[messageSize++] = c;
 
