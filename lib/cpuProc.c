@@ -81,6 +81,16 @@ static void goToAddress(cpuContext_t *ctx, u16 address, bool pushPC) {
     }
 }
 
+/**
+ * Checks if a register type is 16-bit.
+ *
+ * @param registerType The register to check.
+ * @return Whether the register is 16-bit.
+ */
+static bool is16Bit(registerType_t registerType) {
+    return registerType >= RT_AF;
+}
+
 // ===== Instruction processors ================================================
 
 /**
@@ -141,13 +151,119 @@ static void procLD(cpuContext_t *ctx) {
     setCPURegister(ctx->currentInstruction->register1, ctx->fetchedData);
 }
 
-static void procINC(cpuContext_t *ctx) { NO_IMPLEMENTATION("procINC()"); }
+/**
+ * Processor for INC instructions.
+ * Increments a register.
+ *
+ * @param ctx The CPU context.
+ */
+static void procINC(cpuContext_t *ctx) {
+    u16 value = readCPURegister(ctx->currentInstruction->register1) + 1;
 
-static void procDEC(cpuContext_t *ctx) { NO_IMPLEMENTATION("procDEC()"); }
+    if (is16Bit(ctx->currentInstruction->register1)) {
+        emulateCPUCycles(1);  // Need to add 1 extra cycle
+    }
+
+    // Special case for the HL register
+    if (ctx->currentInstruction->register1 == RT_HL &&
+        ctx->currentInstruction->mode == AM_MR) {
+        value = readBus(readCPURegister(RT_HL)) + 1;
+        value &= 0xFF;
+        writeBus(readCPURegister(RT_HL), value);
+    } else {
+        setCPURegister(ctx->currentInstruction->register1, value);
+        value = readCPURegister(ctx->currentInstruction->register1);  // Re-read
+    }
+
+    // If the opcode's bottom 2 are set, skip
+    if ((ctx->currentOpcode & 0x03) == 0x03) {
+        return;
+    }
+
+    setCPUFlags(ctx, value == 0, 0, (value & 0xF) == 0, -1);
+}
+
+/**
+ * Processor for DEC instructions.
+ * Decrements a register.
+ *
+ * @param ctx The CPU context.
+ */
+static void procDEC(cpuContext_t *ctx) {
+    u16 value = readCPURegister(ctx->currentInstruction->register1) - 1;
+
+    if (is16Bit(ctx->currentInstruction->register1)) {
+        emulateCPUCycles(1);  // Need to add 1 extra cycle
+    }
+
+    // Special case for the HL register
+    if (ctx->currentInstruction->register1 == RT_HL &&
+        ctx->currentInstruction->mode == AM_MR) {
+        value = readBus(readCPURegister(RT_HL)) - 1;
+        writeBus(readCPURegister(RT_HL), value);
+    } else {
+        setCPURegister(ctx->currentInstruction->register1, value);
+        value = readCPURegister(ctx->currentInstruction->register1);  // Re-read
+    }
+
+    // If the opcode's bottom 2 are set, skip
+    if ((ctx->currentOpcode & 0x0B) == 0x0B) {
+        return;
+    }
+
+    setCPUFlags(ctx, value == 0, 1, (value & 0xF) == 0x0F, -1);
+}
 
 static void procRLCA(cpuContext_t *ctx) { NO_IMPLEMENTATION("procRLCA()"); }
 
-static void procADD(cpuContext_t *ctx) { NO_IMPLEMENTATION("procADD()"); }
+/**
+ * Processor for ADD instructions.
+ * Adds the fetched data to a register.
+ *
+ * @param ctx The CPU context.
+ */
+static void procADD(cpuContext_t *ctx) {
+    u32 value =
+        readCPURegister(ctx->currentInstruction->register1) + ctx->fetchedData;
+
+    // Set up basic flags
+    int z = (value & 0xFF) == 0;
+    int h = (readCPURegister(ctx->currentInstruction->register1) & 0xF) +
+                (ctx->fetchedData & 0xF) >=
+            0x10;
+    int c = (int)(readCPURegister(ctx->currentInstruction->register1) & 0xFF) +
+                (int)(ctx->fetchedData & 0xFF) >=
+            0x100;
+
+    // If 16 bit...
+    if (is16Bit(ctx->currentInstruction->register1)) {
+        emulateCPUCycles(1);  // Need to add 1 extra cycle
+        z = -1;
+        h = (readCPURegister(ctx->currentInstruction->register1) & 0xFFF) +
+                (ctx->fetchedData & 0xFFF) >=
+            0x1000;
+        u32 n = ((u32)readCPURegister(ctx->currentInstruction->register1) +
+                 (u32)ctx->fetchedData);
+        c = n >= 0x10000;
+    }
+
+    // If SP...
+    if (ctx->currentInstruction->register1 == RT_SP) {
+        // For the stack pointer, fetchedData may be negative
+        value = readCPURegister(ctx->currentInstruction->register1) +
+                (char)ctx->fetchedData;
+        z = 0;
+        h = (readCPURegister(ctx->currentInstruction->register1) & 0xF) +
+                (ctx->fetchedData & 0xF) >=
+            0x10;
+        c = (int)(readCPURegister(ctx->currentInstruction->register1) & 0xFF) +
+                (int)(ctx->fetchedData & 0xFF) >
+            0x100;
+    }
+
+    setCPURegister(ctx->currentInstruction->register1, value & 0xFFFF);
+    setCPUFlags(ctx, z, 0, h, c);
+}
 
 static void procRRCA(cpuContext_t *ctx) { NO_IMPLEMENTATION("procRRCA()"); }
 
@@ -179,11 +295,60 @@ static void procCCF(cpuContext_t *ctx) { NO_IMPLEMENTATION("procCCF()"); }
 
 static void procHALT(cpuContext_t *ctx) { NO_IMPLEMENTATION("procHALT()"); }
 
-static void procADC(cpuContext_t *ctx) { NO_IMPLEMENTATION("procADC()"); }
+/**
+ * Processor for ADC instructions.
+ * Adds the fetched data to the accumulator with carry.
+ *
+ * @param ctx The CPU context.
+ */
+static void procADC(cpuContext_t *ctx) {
+    ctx->registers.a =
+        (ctx->registers.a + ctx->fetchedData + CPUFLAG_CARRYBIT(ctx)) & 0xFF;
 
-static void procSUB(cpuContext_t *ctx) { NO_IMPLEMENTATION("procSUB()"); }
+    setCPUFlags(
+        ctx, ctx->registers.a == 0, 0,
+        (ctx->registers.a & 0xF) + (ctx->fetchedData & 0xF) +
+                CPUFLAG_CARRYBIT(ctx) >
+            0xF,
+        (ctx->registers.a + ctx->fetchedData + CPUFLAG_CARRYBIT(ctx)) > 0xFF);
+}
 
-static void procSBC(cpuContext_t *ctx) { NO_IMPLEMENTATION("procSBC()"); }
+/**
+ * Processor for SUB instructions.
+ * Subtracts the fetched data from a register.
+ *
+ * @param ctx The CPU context.
+ */
+static void procSUB(cpuContext_t *ctx) {
+    u16 value =
+        readCPURegister(ctx->currentInstruction->register1) - ctx->fetchedData;
+
+    int z = value == 0;
+    int h = ((int)readCPURegister(ctx->currentInstruction->register1) & 0xF) -
+                ((int)ctx->fetchedData & 0xF) <
+            0;
+    int c = (int)readCPURegister(ctx->currentInstruction->register1) -
+                (int)ctx->fetchedData <
+            0;
+
+    setCPURegister(ctx->currentInstruction->register1, value);
+    setCPUFlags(ctx, z, 1, h, c);
+}
+
+static void procSBC(cpuContext_t *ctx) {
+    u8 value = ctx->fetchedData + CPUFLAG_CARRYBIT(ctx);
+
+    int z = readCPURegister(ctx->currentInstruction->register1) - value == 0;
+    int h = ((int)readCPURegister(ctx->currentInstruction->register1) & 0xF) -
+                ((int)ctx->fetchedData & 0xF) - ((int)CPUFLAG_CARRYBIT(ctx)) <
+            0;
+    int c = ((int)readCPURegister(ctx->currentInstruction->register1)) -
+                ((int)ctx->fetchedData) - ((int)CPUFLAG_CARRYBIT(ctx)) <
+            0;
+    setCPURegister(ctx->currentInstruction->register1,
+                   readCPURegister(ctx->currentInstruction->register1) - value);
+    setCPUFlags(ctx, z, 1, h, c);
+}
 
 static void procAND(cpuContext_t *ctx) { NO_IMPLEMENTATION("procAND()"); }
 
