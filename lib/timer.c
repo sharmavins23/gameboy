@@ -1,9 +1,5 @@
 #include <timer.h>
 
-void timer_init() {
+void initializeTimer() {}
 
-}
-
-void timer_tick() {
-
-}
+void tickTimer() {}

@@ -1,94 +1,123 @@
+// * Emulates the Game Boy CPU (LR35902).
+
 #include <cpu.h>
 #include <bus.h>
 #include <emu.h>
 
-cpu_context ctx = {0};
+// ===== Globals ===============================================================
 
-void cpu_init() {
-    // Set the program counter to the entrypoint
-    ctx.regs.pc = 0x100;
-    // Default value for A register
-    ctx.regs.a = 0x01;
+// The CPU context object - contains all CPU state
+cpuContext_t ctx = {0};
+
+// ===== Helper functions ======================================================
+
+/**
+ * Fetches the next instruction from memory.
+ */
+static void fetchInstruction() {
+    ctx.currentOpcode = readFromBus(ctx.registers.pc++);
+    ctx.currentInstruction = getInstructionFromOpcode(ctx.currentOpcode);
 }
 
-static void fetch_instruction() {
-    ctx.cur_opcode = bus_read(ctx.regs.pc++);
-    ctx.cur_inst = instruction_by_opcode(ctx.cur_opcode);
-}
+/**
+ * Fetches data for the current instruction.
+ */
+static void fetchData() {
+    ctx.memoryDestination = 0;
+    ctx.destinationIsMemory = false;
 
-static void fetch_data() {
-    ctx.mem_dest = 0;
-    ctx.dest_is_mem = false;
-
-    if (ctx.cur_inst == NULL) {
+    if (ctx.currentInstruction == NULL) {
         return;  // Avoid segfaults
     }
 
-    switch (ctx.cur_inst->mode) {
+    switch (ctx.currentInstruction->mode) {
         case AM_IMP:  // Implied mode
 
             return;
 
         case AM_R:  // Register
-            ctx.fetched_data = cpu_read_reg(ctx.cur_inst->reg_1);
+            ctx.fetchedData = readCPURegister(ctx.currentInstruction->reg_1);
 
             return;
 
         case AM_R_D8:
-            ctx.fetched_data = bus_read(ctx.regs.pc);
-            emu_cycles(1);  // 1 CPU cycle for bus reading
-            ctx.regs.pc++;
+            ctx.fetchedData = readFromBus(ctx.registers.pc);
+            emulateCPUCycles(1);  // 1 CPU cycle for bus reading
+            ctx.registers.pc++;
 
             return;
 
         case AM_D16: {
-            u16 lo = bus_read(ctx.regs.pc);
-            emu_cycles(1);
-            u16 hi = bus_read(ctx.regs.pc + 1);
-            emu_cycles(1);
+            u16 lo = readFromBus(ctx.registers.pc);
+            emulateCPUCycles(1);
+            u16 hi = readFromBus(ctx.registers.pc + 1);
+            emulateCPUCycles(1);
 
-            ctx.fetched_data = lo | (hi << 8);
-            ctx.regs.pc += 2;
+            ctx.fetchedData = lo | (hi << 8);
+            ctx.registers.pc += 2;
 
             return;
         }
 
         default:
-            printf("Unknown addressing mode! %d (%02X)\n", ctx.cur_inst->mode,
-                   ctx.cur_opcode);
-            exit(-7);  // Fatal error
+            printf("%sERR:%s Unknown addressing mode! %s%d%s (%s0x%02X%s)\n",
+                   CRED, CRST, CYEL, ctx.currentInstruction->mode, CRST, CMAG,
+                   ctx.currentOpcode, CRST);
+            exit(EXIT_FAILURE);
     }
 }
 
+/**
+ * Executes the current instruction.
+ */
 static void execute() {
-    IN_PROC proc = inst_get_processor(ctx.cur_inst->type);
+    IN_PROC proc = getProcessorForInstructionType(ctx.currentInstruction->type);
 
     if (!proc) {
-        NO_IMPL  // If null, no implementation
+        NO_IMPLEMENTATION("execute() without processor");
     }
 
     proc(&ctx);
 }
 
-bool cpu_step() {
+// ===== CPU functions =========================================================
+
+/**
+ * Initializes the CPU.
+ */
+void initializeCPU() {
+    // Set the program counter to the entrypoint
+    ctx.registers.pc = 0x100;
+    // Default value for A register
+    ctx.registers.a = 0x01;
+}
+
+/**
+ * Steps the CPU by one instruction.
+ */
+void stepCPU() {
     // If the CPU is running, fetch an instruction
     if (!ctx.halted) {
-        u16 pc = ctx.regs.pc;
+        u16 pc = ctx.registers.pc;
 
-        fetch_instruction();
-        fetch_data();
+        fetchInstruction();
+        fetchData();
 
-        printf("%04X: %-7s (%02X %02X %02X) A: %02X B: %02X C: %02X\n", pc,
-               inst_name(ctx.cur_inst->type), ctx.cur_opcode, bus_read(pc + 1),
-               bus_read(pc + 2), ctx.regs.a, ctx.regs.b, ctx.regs.c);
+        printf(
+            "%s0x%04X%s: %s%-7s%s (%s%02X%s %s%02X %02X%s) A: %02X B: %02X C: "
+            "%02X\n",
+            CMAG, pc, CRST, CBLU,
+            getInstructionName(ctx.currentInstruction->type), CRST, CCYN,
+            ctx.currentOpcode, CRST, CMAG, readFromBus(pc + 1),
+            readFromBus(pc + 2), CRST, ctx.registers.a, ctx.registers.b,
+            ctx.registers.c);
 
-        if (ctx.cur_inst == NULL) {
-            printf("Unknown instruction! %02X\n", ctx.cur_opcode);
-            exit(-7);
+        if (ctx.currentInstruction == NULL) {
+            printf("%sERR:%s Unknown instruction encountered! %s0x%02X%s\n",
+                   CRED, CRST, CMAG, ctx.currentOpcode, CRST);
+            exit(EXIT_FAILURE);
         }
 
         execute();
     }
-
-    return true;
 }

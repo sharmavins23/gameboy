@@ -3,40 +3,81 @@
 #include <common.h>
 #include <instructions.h>
 
+// CPU register structure - Contains all registers and their values
 typedef struct {
-    u8 a;
-    u8 f;
-    u8 b;
-    u8 c;
-    u8 d;
-    u8 e;
-    u8 h;
-    u8 l;
-    u16 pc;
-    u16 sp;
-} cpu_registers;
+    u8 a;    // Accumulator
+    u8 f;    // Flags
+    u8 b;    // General purpose register
+    u8 c;    // Combines with B for BC register
+    u8 d;    // General purpose register
+    u8 e;    // Combines with D for DE register
+    u8 h;    // General purpose register
+    u8 l;    // Combines with H for HL register
+    u16 pc;  // Program counter
+    u16 sp;  // Stack pointer
+} cpuRegisters_t;
 
+// CPU context structure - Contains all CPU state
 typedef struct {
-    cpu_registers regs;
-    u16 fetched_data;  // Current fetch
-    u16 mem_dest;
-    bool dest_is_mem;  // Is the destination a memory location?
-    u8 cur_opcode;
-    instruction *cur_inst;    // Current instruction
-    bool halted;              // Is the CPU halted?
-    bool stepping;            // Stepping mode (DBG)
-    bool int_master_enabled;  // Whether interrupts are enabled or disabled
-} cpu_context;
+    cpuRegisters_t registers;  // Registers and their values
+    u16 fetchedData;  // Current data fetched from instruction (immediate)
 
-void cpu_init();
+    u16 memoryDestination;     // Memory destination for current processing
+    bool destinationIsMemory;  // Is the destination a memory location?
 
-bool cpu_step();
+    u8 currentOpcode;                   // Current instruction opcode
+    instruction_t *currentInstruction;  // Current instruction
 
-typedef void (*IN_PROC)(cpu_context *);
+    bool halted;    // Is the CPU halted?
+    bool stepping;  // Stepping mode (DBG)
 
-IN_PROC inst_get_processor(in_type type);
+    bool masterInterruptEnabled;  // Whether interrupts are enabled or disabled
+} cpuContext_t;
 
-#define CPU_FLAG_Z BIT(ctx->regs.f, 7)
-#define CPU_FLAG_C BIT(ctx->regs.f, 4)
+// Function pointer for instruction processing
+typedef void (*IN_PROC)(cpuContext_t *);
 
-u16 cpu_read_reg(reg_type rt);
+/**
+ * Gets the zero bit from a CPU flag.
+ *
+ * @param ctx The CPU context.
+ * @return The zero bit.
+ */
+static inline bool CPUFLAG_ZEROBIT(cpuContext_t *ctx) {
+    return BIT(ctx->registers.f, 7);
+}
+
+/**
+ * Gets the carry bit from a CPU flag.
+ *
+ * @param ctx The CPU context.
+ * @return The carry bit.
+ */
+static inline bool CPUFLAG_CARRYBIT(cpuContext_t *ctx) {
+    return BIT(ctx->registers.f, 4);
+}
+
+/**
+ * Gets the processor for a given instruction type.
+ *
+ * @param type The instruction type.
+ * @return The processor function pointer.
+ */
+IN_PROC getProcessorForInstructionType(instructionType_t type);
+
+/**
+ * Reads a CPU register.
+ *
+ * @param registerType The register type.
+ */
+u16 readCPURegister(registerType_t registerType);
+
+/**
+ * Initializes the CPU.
+ */
+void initializeCPU();
+
+/**
+ * Steps the CPU by one instruction.
+ */
+void stepCPU();

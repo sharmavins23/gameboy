@@ -16,6 +16,20 @@ typedef struct {
  */
 emuContext_t *getEMUContext();
 
-int emu_run(int argc, char **argv);
+/**
+ * Runs the emulator system with the given arguments.
+ * Acts as a secondary entry point to the emulator.
+ *
+ * @param argc The number of arguments.
+ * @param argv The arguments.
+ * @return The exit code.
+ */
+int runEmulator(int argc, char **argv);
 
-void emu_cycles(int cpu_cycles);
+/**
+ * Emulates a given number of CPU cycles.
+ * This function is used to emulate elapsed time caused by CPU instructions.
+ *
+ * @param cpuCycles The number of CPU cycles to emulate.
+ */
+void emulateCPUCycles(int cpuCycles);

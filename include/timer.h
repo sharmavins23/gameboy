@@ -2,5 +2,5 @@
 
 #include <common.h>
 
-void timer_init();
-void timer_tick();
+void initializeTimer();
+void tickTimer();

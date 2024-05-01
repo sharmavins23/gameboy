@@ -48,7 +48,7 @@ void delay(u32 ms) { SDL_Delay(ms); }
  * @param argv The arguments.
  * @return The exit code.
  */
-int emu_run(int argc, char **argv) {
+int runEmulator(int argc, char **argv) {
     printf("%s=======================%s\n", CBLU, CRST);
     printf("%s * Game Boy Emulator * %s\n", CMAG, CRST);
     printf("%s=======================%s\n", CBLU, CRST);
@@ -67,19 +67,38 @@ int emu_run(int argc, char **argv) {
     }
 
     // Initialize Simple DirectMedia Layer for rendering
-    SDL_Init(SDL_INIT_VIDEO);
-    printf("SDL INIT\n");
+    if (SDL_Init(SDL_INIT_VIDEO) < 0) {
+        printf(
+            "%sERR:%s Failed to initialize Simple DirectMedia Layer (%sSDL%s): "
+            "%s\n",
+            CRED, CRST, CBLU, CRST, SDL_GetError());
+        return EXIT_FAILURE;
+    } else {
+        printf("Initialized Simple DirectMedia Layer (%sSDL%s).\n", CBLU, CRST);
+    }
     // Initialize the TrueType Font library
-    TTF_Init();
-    printf("TTF INIT\n");
+    if (TTF_Init() < 0) {
+        printf(
+            "%sERR:%s Failed to initialize TrueType Font library "
+            "(%sSDL_ttf%s): "
+            "%s\n",
+            CRED, CRST, CBLU, CRST, TTF_GetError());
+        return EXIT_FAILURE;
+    } else {
+        printf("Initialized TrueType Font library (%sSDL_ttf%s).\n", CBLU,
+               CRST);
+    }
 
-    cpu_init();
+    // Initialize CPU
+    initializeCPU();
 
     ctx.running = true;
     ctx.paused = false;
     ctx.ticks = 0;
 
-    // Game loop
+    printf("Starting emulation...\n");
+
+    // Run loop
     while (ctx.running) {
         // Hang processor for paused game
         if (ctx.paused) {
@@ -87,11 +106,8 @@ int emu_run(int argc, char **argv) {
             continue;
         }
 
-        // If the CPU hangs/fails stepping, stop the emulator
-        if (!cpu_step()) {
-            printf("CPU Stopped\n");
-            return -3;
-        }
+        // Step the CPU
+        stepCPU();
 
         ctx.ticks++;
     }
@@ -99,6 +115,12 @@ int emu_run(int argc, char **argv) {
     return EXIT_SUCCESS;
 }
 
-void emu_cycles(int cpu_cycles) {
+/**
+ * Emulates a given number of CPU cycles.
+ * This function is used to emulate elapsed time caused by CPU instructions.
+ *
+ * @param cpuCycles The number of CPU cycles to emulate.
+ */
+void emulateCPUCycles(int cpuCycles) {
     // TODO: Emulate cycle stalling
 }

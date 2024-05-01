@@ -2,5 +2,5 @@
 
 #include <common.h>
 
-void ppu_init();
-void ppu_tick();
+void initializePPU();
+void tickPPU();

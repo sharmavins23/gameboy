@@ -1,3 +1,5 @@
+// * Handles reading and writing of information to the shared bus.
+
 #include <bus.h>
 #include <cart.h>
 
@@ -16,21 +18,35 @@
 // 0xFF00 - 0xFF7F : I/O Registers
 // 0xFF80 - 0xFFFE : Zero Page
 
-u8 bus_read(u16 address) {
+// ===== Bus functions =========================================================
+
+/**
+ * Reads a byte from the bus at the given address.
+ *
+ * @param address The address to read from.
+ * @return The byte read from the bus.
+ */
+u8 readFromBus(u16 address) {
     // For now, only read from ROM
     if (address < 0x8000) {
         return readCartridge(address);
     }
 
-    NO_IMPL
+    NO_IMPLEMENTATION("readFromBus() outside ROM");
 }
 
-void bus_write(u16 address, u8 value) {
+/**
+ * Writes a byte to the bus at the given address.
+ *
+ * @param address The address to write to.
+ * @param value The value to write.
+ */
+void writeToBus(u16 address, u8 value) {
     if (address < 0x8000) {
         // ROM Data
         writeToCartridge(address, value);
         return;
     }
 
-    NO_IMPL
+    NO_IMPLEMENTATION("writeToBus() outside ROM");
 }

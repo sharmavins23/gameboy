@@ -1,9 +1,5 @@
 #include <ppu.h>
 
-void ppu_init() {
+void initializePPU() {}
 
-}
-
-void ppu_tick() {
-
-}
+void tickPPU() {}

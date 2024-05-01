@@ -2,30 +2,32 @@
 
 #include <common.h>
 
+// Addressing modes for instructions
 typedef enum {
-    AM_IMP,    // Implied - Nothing to read after this
-    AM_R_D16,  // 16-bit into register
-    AM_R_R,    // Register into register
-    AM_MR_R,   // Register into memory location (reference in register)
-    AM_R,      // Single register
-    AM_R_D8,   // 8-bit into register
-    AM_R_MR,   // Memory location into register
-    AM_R_HLI,
-    AM_R_HLD,
-    AM_HLI_R,
-    AM_HLD_R,
-    AM_R_A8,
-    AM_A8_R,
-    AM_HL_SPR,
-    AM_D16,
-    AM_D8,
-    AM_D16_R,
-    AM_MR_D8,
-    AM_MR,
+    AM_IMP,     // Implied - Nothing to read after this
+    AM_R_D16,   // 16-bit into register
+    AM_R_R,     // Register into register
+    AM_MR_R,    // Register into memory location (reference in register)
+    AM_R,       // Single register
+    AM_R_D8,    // 8-bit into register
+    AM_R_MR,    // Memory location into register
+    AM_R_HLI,   // HL register memory location into register
+    AM_R_HLD,   // HL register data into register
+    AM_HLI_R,   // Register into HL register memory location
+    AM_HLD_R,   // Register into HL register data
+    AM_R_A8,    // A register into register
+    AM_A8_R,    // Register into A register
+    AM_HL_SPR,  // Stack pointer into HL register
+    AM_D16,     // 16-bit data
+    AM_D8,      // 8-bit data
+    AM_D16_R,   // Register into 16-bit data
+    AM_MR_D8,   // 8-bit data into memory location (reference in register)
+    AM_MR,      // Memory location (reference in register)
     AM_A16_R,
     AM_R_A16
-} addr_mode;
+} addressingMode_t;
 
+// Register types for instructions
 typedef enum {
     RT_NONE,  // No register needed
     RT_A,     // 8-bit registers
@@ -42,8 +44,9 @@ typedef enum {
     RT_HL,
     RT_SP,
     RT_PC
-} reg_type;
+} registerType_t;
 
+// Instruction types
 typedef enum {
     IN_NONE,
     IN_NOP,
@@ -94,25 +97,27 @@ typedef enum {
     IN_BIT,
     IN_RES,
     IN_SET
-} in_type;
+} instructionType_t;
 
+// Condition types for instructions
 typedef enum {
     CT_NONE,  // No conditions
     CT_NZ,    // If zero flag isn't set
     CT_Z,     // If zero flag is set
     CT_NC,    // If carry flag isn't set
     CT_C      // If carry flag is set
-} cond_type;
+} conditionType_t;
 
+// Instruction structure
 typedef struct {
-    in_type type;
-    addr_mode mode;
-    reg_type reg_1;
-    reg_type reg_2;
-    cond_type cond;
+    instructionType_t type;
+    addressingMode_t mode;
+    registerType_t reg_1;
+    registerType_t reg_2;
+    conditionType_t cond;
     u8 param;
-} instruction;
+} instruction_t;
 
-instruction *instruction_by_opcode(u8 opcode);
+instruction_t *getInstructionFromOpcode(u8 opcode);
 
-char *inst_name(in_type t);
+char *getInstructionName(instructionType_t instructionType);

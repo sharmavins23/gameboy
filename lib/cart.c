@@ -246,5 +246,5 @@ u8 readCartridge(u16 address) {
  */
 void writeToCartridge(u16 address, u8 value) {
     // For now, ROM ONLY supported
-    NO_IMPL
+    NO_IMPLEMENTATION("writeToCartridge()");
 }

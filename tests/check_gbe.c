@@ -5,10 +5,8 @@
 
 #include <cpu.h>
 
-START_TEST(test_nothing) {
-    bool b = cpu_step();
-    ck_assert_uint_eq(b, false);
-} END_TEST
+START_TEST(test_nothing) { stepCPU(); }
+END_TEST
 
 Suite *stack_suite() {
     Suite *s = suite_create("emu");
@@ -30,4 +28,3 @@ int main() {
 
     return nf == 0 ? 0 : -1;
 }
-
