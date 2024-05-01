@@ -32,7 +32,9 @@ typedef struct {
     bool stepping;  // Stepping mode (DBG)
 
     bool masterInterruptEnabled;  // Whether interrupts are enabled or disabled
+    bool enablingIME;             // Whether IME is currently being enabled
     u8 interruptEnableRegister;   // Interrupt enable register
+    u8 interruptFlags;            // Interrupt flags register
 } cpuContext_t;
 
 // Function pointer for instruction processing
@@ -48,6 +50,26 @@ typedef void (*IN_PROC)(cpuContext_t *);
  */
 static inline bool CPUFLAG_ZEROBIT(cpuContext_t *ctx) {
     return BIT(ctx->registers.f, 7);
+}
+
+/**
+ * Gets the negative bit from a CPU flag.
+ *
+ * @param ctx The CPU context.
+ * @return The negative bit.
+ */
+static inline bool CPUFLAG_NEGATIVEBIT(cpuContext_t *ctx) {
+    return BIT(ctx->registers.f, 6);
+}
+
+/**
+ * Gets the half-carry bit from a CPU flag.
+ *
+ * @param ctx The CPU context.
+ * @return The half-carry bit.
+ */
+static inline bool CPUFLAG_HALFCARRYBIT(cpuContext_t *ctx) {
+    return BIT(ctx->registers.f, 5);
 }
 
 /**
@@ -132,6 +154,20 @@ u8 readCPURegister8(registerType_t registerType);
  * @param value The value to write.
  */
 void setCPURegister8(registerType_t registerType, u8 value);
+
+/**
+ * Reads the CPU Interrupt Flags register.
+ *
+ * @return The value of the IF register.
+ */
+u8 getCPUInterruptFlags();
+
+/**
+ * Writes a value to the CPU Interrupt Flags register.
+ *
+ * @param flags The flags to set.
+ */
+void setCPUInterruptFlags(u8 flags);
 
 // ===== CPU functions =========================================================
 

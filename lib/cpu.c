@@ -3,6 +3,7 @@
 #include <cpu.h>
 #include <bus.h>
 #include <emu.h>
+#include <interrupts.h>
 
 // ===== Globals ===============================================================
 
@@ -84,5 +85,21 @@ void stepCPU() {
         }
 
         execute();
+    } else {
+        // If the CPU is halted...
+        emulateCPUCycles(1);  // Halting causes cycles to occur
+
+        if (ctx.interruptFlags) {
+            ctx.halted = false;
+        }
+
+        if (ctx.masterInterruptEnabled) {
+            handleCPUInterrupt(&ctx);
+            ctx.enablingIME = false;
+        }
+
+        if (ctx.enablingIME) {
+            ctx.masterInterruptEnabled = true;
+        }
     }
 }

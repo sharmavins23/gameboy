@@ -214,3 +214,17 @@ void setCPURegister8(registerType_t registerType, u8 value) {
             exit(EXIT_FAILURE);
     }
 }
+
+/**
+ * Reads the CPU Interrupt Flags register.
+ *
+ * @return The value of the IF register.
+ */
+u8 getCPUInterruptFlags() { return ctx.interruptFlags; }
+
+/**
+ * Writes a value to the CPU Interrupt Flags register.
+ *
+ * @param flags The flags to set.
+ */
+void setCPUInterruptFlags(u8 flags) { ctx.interruptFlags = flags; }

@@ -231,7 +231,20 @@ static void procDEC(cpuContext_t *ctx) {
     setCPUFlags(ctx, value == 0, 1, (value & 0xF) == 0x0F, -1);
 }
 
-static void procRLCA(cpuContext_t *ctx) { NO_IMPLEMENTATION("procRLCA()"); }
+/**
+ * Processor for RLCA instructions.
+ * Rotates the accumulator left.
+ *
+ * @param ctx The CPU context.
+ */
+static void procRLCA(cpuContext_t *ctx) {
+    u8 u = ctx->registers.a;
+    bool c = (u >> 7) & 1;
+    u = (u << 1) | c;
+    ctx->registers.a = u;
+
+    setCPUFlags(ctx, 0, 0, 0, c);
+}
 
 /**
  * Processor for ADD instructions.
@@ -282,11 +295,36 @@ static void procADD(cpuContext_t *ctx) {
     setCPUFlags(ctx, z, 0, h, c);
 }
 
-static void procRRCA(cpuContext_t *ctx) { NO_IMPLEMENTATION("procRRCA()"); }
+/**
+ * Processor for RRCA instructions.
+ * Rotates the accumulator right. Moves old bit 0 to carry flag.
+ *
+ * @param ctx The CPU context.
+ */
+static void procRRCA(cpuContext_t *ctx) {
+    u8 b = ctx->registers.a & 1;
+    ctx->registers.a >>= 1;
+    ctx->registers.a |= b << 7;
+
+    setCPUFlags(ctx, 0, 0, 0, b);
+}
 
 static void procSTOP(cpuContext_t *ctx) { NO_IMPLEMENTATION("procSTOP()"); }
 
-static void procRLA(cpuContext_t *ctx) { NO_IMPLEMENTATION("procRLA()"); }
+/**
+ * Processor for RLA instructions.
+ * Rotates the accumulator left through the carry flag.
+ *
+ * @param ctx The CPU context.
+ */
+static void procRLA(cpuContext_t *ctx) {
+    u8 u = ctx->registers.a;
+    u8 cf = CPUFLAG_CARRYBIT(ctx);
+    u8 c = (u >> 7) & 1;
+
+    ctx->registers.a = (u << 1) | cf;
+    setCPUFlags(ctx, 0, 0, 0, c);
+}
 
 /**
  * Processor for JR instructions.
@@ -300,17 +338,83 @@ static void procJR(cpuContext_t *ctx) {
     goToAddress(ctx, addr, false);
 }
 
-static void procRRA(cpuContext_t *ctx) { NO_IMPLEMENTATION("procRRA()"); }
+/**
+ * Processor for RRA instructions.
+ * Rotates the accumulator right through the carry flag.
+ *
+ * @param ctx The CPU context.
+ */
+static void procRRA(cpuContext_t *ctx) {
+    u8 carry = CPUFLAG_CARRYBIT(ctx);
+    u8 newCarry = ctx->registers.a & 1;
 
-static void procDAA(cpuContext_t *ctx) { NO_IMPLEMENTATION("procDAA()"); }
+    ctx->registers.a = (ctx->registers.a >> 1) | (carry << 7);
 
-static void procCPL(cpuContext_t *ctx) { NO_IMPLEMENTATION("procCPL()"); }
+    setCPUFlags(ctx, 0, 0, 0, newCarry);
+}
 
-static void procSCF(cpuContext_t *ctx) { NO_IMPLEMENTATION("procSCF()"); }
+/**
+ * Processor for DAA instructions.
+ * Handles the decimal adjustment after addition instruction.
+ *
+ * @param ctx The CPU context.
+ */
+static void procDAA(cpuContext_t *ctx) {
+    u8 u = 0;
+    int fc = 0;
 
-static void procCCF(cpuContext_t *ctx) { NO_IMPLEMENTATION("procCCF()"); }
+    if (CPUFLAG_HALFCARRYBIT(ctx) ||
+        (!CPUFLAG_NEGATIVEBIT(ctx) && (ctx->registers.a & 0xF) > 9)) {
+        u = 6;
+    }
 
-static void procHALT(cpuContext_t *ctx) { NO_IMPLEMENTATION("procHALT()"); }
+    if (CPUFLAG_CARRYBIT(ctx) ||
+        (!CPUFLAG_NEGATIVEBIT(ctx) && ctx->registers.a > 0x99)) {
+        u |= 0x60;
+        fc = 1;
+    }
+
+    ctx->registers.a += CPUFLAG_NEGATIVEBIT(ctx) ? -u : u;
+
+    setCPUFlags(ctx, ctx->registers.a == 0, 0, 0, fc);
+}
+
+/**
+ * Processor for CPL instructions.
+ * Complements the accumulator.
+ *
+ * @param ctx The CPU context.
+ */
+static void procCPL(cpuContext_t *ctx) {
+    ctx->registers.a = ~ctx->registers.a;
+    setCPUFlags(ctx, -1, 1, 1, -1);
+}
+
+/**
+ * Processor for SCF instructions.
+ * Sets the carry flag.
+ *
+ * @param ctx The CPU context.
+ */
+static void procSCF(cpuContext_t *ctx) { setCPUFlags(ctx, -1, 0, 0, 1); }
+
+/**
+ * Processor for CCF instructions.
+ * Complements the carry flag.
+ *
+ * @param ctx The CPU context.
+ */
+static void procCCF(cpuContext_t *ctx) {
+    setCPUFlags(ctx, -1, 0, 0, CPUFLAG_CARRYBIT(ctx) ^ 1);
+}
+
+/**
+ * Processor for HALT instructions.
+ * Halts the CPU.
+ *
+ * @param ctx The CPU context.
+ */
+static void procHALT(cpuContext_t *ctx) { ctx->halted = true; }
 
 /**
  * Processor for ADC instructions.
@@ -655,8 +759,20 @@ static void procJPHL(cpuContext_t *ctx) { NO_IMPLEMENTATION("procJPHL()"); }
  */
 static void procDI(cpuContext_t *ctx) { ctx->masterInterruptEnabled = false; }
 
-static void procEI(cpuContext_t *ctx) { NO_IMPLEMENTATION("procEI()"); }
+/**
+ * Processor for EI instructions.
+ * Enables interrupts.
+ *
+ * @param ctx The CPU context.
+ */
+static void procEI(cpuContext_t *ctx) { ctx->masterInterruptEnabled = true; }
 
+/**
+ * Processor for RST instructions.
+ * Restarts the CPU at a given address.
+ *
+ * @param ctx The CPU context.
+ */
 static void procRST(cpuContext_t *ctx) {
     goToAddress(ctx, ctx->currentInstruction->param, true);
 }
