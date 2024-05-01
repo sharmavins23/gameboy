@@ -32,6 +32,7 @@ static inline void NO_IMPLEMENTATION(char* feature) {
     else
         printf("%sERR:%s Feature %s%s%s not yet implemented.\n", CRED, CRST,
                CBLU, feature, CRST);
+    // ! DISABLE TO CONTINUE ON NI - NOT RECOMMENDED
     exit(EXIT_FAILURE);
 }
 
@@ -45,17 +46,19 @@ static inline void NO_IMPLEMENTATION(char* feature) {
 static inline bool BIT(u8 a, u8 n) { return (a & (1 << n)) ? 1 : 0; }
 
 /**
- * Sets a bit in a byte.
+ * Sets a bit in a byte. This function RETURNS the new byte value.
  *
  * @param a The byte to set the bit in.
  * @param n The bit to set.
  * @param on Whether to set the bit on or off.
  */
-static inline void SETBIT(u8 a, u8 n, bool on) {
+static inline u8 SETBIT(u8 a, u8 n, bool on) {
     if (on)
         a |= (1 << n);
     else
         a &= ~(1 << n);
+
+    return a;
 }
 
 /**

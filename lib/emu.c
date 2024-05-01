@@ -110,6 +110,11 @@ int runEmulator(int argc, char **argv) {
         stepCPU();
 
         ctx.ticks++;
+
+        // ! DEBUG: Stop after some ticks
+        if (ctx.ticks > 400) {
+            ctx.running = false;
+        }
     }
 
     return EXIT_SUCCESS;

@@ -45,16 +45,16 @@ static bool checkCondition(cpuContext_t *ctx) {
 void setCPUFlags(cpuContext_t *ctx, char z, char n, char h, char c) {
     // If we don't want to modify flags, we pass in flag = -1
     if (z != -1) {
-        SETBIT(ctx->registers.f, 7, z);
+        ctx->registers.f = SETBIT(ctx->registers.f, 7, z);
     }
     if (n != -1) {
-        SETBIT(ctx->registers.f, 6, n);
+        ctx->registers.f = SETBIT(ctx->registers.f, 6, n);
     }
     if (h != -1) {
-        SETBIT(ctx->registers.f, 5, h);
+        ctx->registers.f = SETBIT(ctx->registers.f, 5, h);
     }
     if (c != -1) {
-        SETBIT(ctx->registers.f, 4, c);
+        ctx->registers.f = SETBIT(ctx->registers.f, 4, c);
     }
 }
 
@@ -209,6 +209,7 @@ static void procDEC(cpuContext_t *ctx) {
     // If the opcode's bottom 2 are set, skip
     if ((ctx->currentOpcode & 0x0B) == 0x0B) {
         return;
+        printf("Returning early...");
     }
 
     setCPUFlags(ctx, value == 0, 1, (value & 0xF) == 0x0F, -1);

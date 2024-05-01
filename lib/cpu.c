@@ -55,16 +55,27 @@ void stepCPU() {
         fetchInstruction();
         fetchData();
 
-        printf("PC %s0x%04X%s: %s%-7s%s (%s%02X%s %s%02X %02X%s) | ", CMAG, pc,
+        printf("PC %s0x%04X%s: %s%-5s%s (%s%02X%s %s%02X %02X%s) | ", CMAG, pc,
                CRST, CBLU, getInstructionName(ctx.currentInstruction->type),
                CRST, CCYN, ctx.currentOpcode, CRST, CMAG, readBus(pc + 1),
                readBus(pc + 2), CRST);
         printf(
-            "AF=%s0x%04X%s BC=%s0x%04X%s DE=%s0x%04X%s HL=%s0x%04X%s "
-            "SP=%s0x%04X%s\n",
-            CMAG, readCPURegister(RT_AF), CRST, CMAG, readCPURegister(RT_BC),
-            CRST, CMAG, readCPURegister(RT_DE), CRST, CMAG,
-            readCPURegister(RT_HL), CRST, CMAG, readCPURegister(RT_SP), CRST);
+            "A=%s0x%02X%s BC=%s0x%02X%02X%s DE=%s0x%02X%02X%s "
+            "HL=%s0x%02X%02X%s "
+            "SP=%s0x%04X%s | ",
+            CMAG, ctx.registers.a, CRST, CMAG, ctx.registers.b, ctx.registers.c,
+            CRST, CMAG, ctx.registers.d, ctx.registers.e, CRST, CMAG,
+            ctx.registers.h, ctx.registers.l, CRST, CMAG, ctx.registers.sp,
+            CRST);
+        char flags[5];
+        sprintf(flags, "%c%c%c%c", BIT(ctx.registers.f, 7) ? 'Z' : '-',
+                BIT(ctx.registers.f, 6) ? 'N' : '-',
+                BIT(ctx.registers.f, 5) ? 'H' : '-',
+                BIT(ctx.registers.f, 4) ? 'C' : '-');
+        printf("F=%s0x%02X%s (%s%s%s) | ", CMAG, ctx.registers.f, CRST, CBLU,
+               flags, CRST);
+        // Also print emulator clock cycles
+        printf("%08lx\n", getEMUContext()->ticks);
 
         if (ctx.currentInstruction == NULL) {
             printf("%sERR:%s Unknown instruction encountered! %s0x%02X%s\n",
