@@ -58,3 +58,74 @@ u16 readCPURegister(registerType_t registerType) {
             return 0;
     }
 }
+
+/**
+ * Writes a value to a CPU register.
+ *
+ * @param registerType The register type.
+ * @param value The value to write.
+ */
+void setCPURegister(registerType_t registerType, u16 value) {
+    switch (registerType) {
+        case RT_A:
+            ctx.registers.a = value & 0xFF;
+            return;
+        case RT_F:
+            ctx.registers.f = value & 0xFF;
+            return;
+        case RT_B:
+            ctx.registers.b = value & 0xFF;
+            return;
+        case RT_C:
+            ctx.registers.c = value & 0xFF;
+            return;
+        case RT_D:
+            ctx.registers.d = value & 0xFF;
+            return;
+        case RT_E:
+            ctx.registers.e = value & 0xFF;
+            return;
+        case RT_H:
+            ctx.registers.h = value & 0xFF;
+            return;
+        case RT_L:
+            ctx.registers.l = value & 0xFF;
+            return;
+
+        case RT_AF:
+            *((u16 *)&ctx.registers.a) = reverse(value);
+            return;
+        case RT_BC:
+            *((u16 *)&ctx.registers.b) = reverse(value);
+            return;
+        case RT_DE:
+            *((u16 *)&ctx.registers.d) = reverse(value);
+            return;
+        case RT_HL:
+            *((u16 *)&ctx.registers.h) = reverse(value);
+            return;
+
+        case RT_PC:
+            ctx.registers.pc = value;
+            return;
+        case RT_SP:
+            ctx.registers.sp = value;
+            return;
+        case RT_NONE:
+            return;
+    }
+}
+
+/**
+ * Reads the CPU Interrupt Enable (IE) register.
+ *
+ * @return The value of the IE register.
+ */
+u8 readCPUIERegister() { return ctx.interruptEnableRegister; }
+
+/**
+ * Writes a value to the CPU Interrupt Enable (IE) register.
+ *
+ * @param value The value to write.
+ */
+void setCPUIERegister(u8 value) { ctx.interruptEnableRegister = value; }

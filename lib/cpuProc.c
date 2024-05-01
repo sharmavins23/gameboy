@@ -2,6 +2,7 @@
 
 #include <cpu.h>
 #include <emu.h>
+#include <bus.h>
 
 // ===== Helper functions ======================================================
 
@@ -85,7 +86,35 @@ static void procNOP(cpuContext_t *ctx) {
  *
  * @param ctx The CPU context.
  */
-static void procLD(cpuContext_t *ctx) { NO_IMPLEMENTATION("LD instruction"); }
+static void procLD(cpuContext_t *ctx) {
+    if (ctx->destinationIsMemory) {
+        // If a 16-bit register...
+        if (ctx->currentInstruction->register2 >= RT_AF) {
+            write16ToBus(ctx->memoryDestination, ctx->fetchedData);
+            emulateCPUCycles(1);  // 1 cycle for writing to bus
+        } else {
+            writeToBus(ctx->memoryDestination, ctx->fetchedData);
+            emulateCPUCycles(1);  // 1 cycle for writing to bus
+        }
+    }
+
+    if (ctx->currentInstruction->mode == AM_HL_SPR) {
+        u8 hflag = (readCPURegister(ctx->currentInstruction->register2) & 0xF) +
+                       (ctx->fetchedData & 0xF) >=
+                   0x10;
+        u8 cflag =
+            (readCPURegister(ctx->currentInstruction->register2) & 0xFF) +
+                (ctx->fetchedData & 0xF) >=
+            0x100;
+
+        setCPUFlags(ctx, 0, 0, hflag, cflag);
+        setCPURegister(ctx->currentInstruction->register1,
+                       readCPURegister(ctx->currentInstruction->register2) +
+                           (char)ctx->fetchedData);
+    }
+
+    setCPURegister(ctx->currentInstruction->register1, ctx->fetchedData);
+}
 
 /**
  * Processor for XOR instructions.
@@ -113,6 +142,17 @@ static void procJP(cpuContext_t *ctx) {
     }
 }
 
+static void procLDH(cpuContext_t *ctx) {
+    if (ctx->currentInstruction->register1 == RT_A) {
+        setCPURegister(ctx->currentInstruction->register1,
+                       readFromBus(0xFF00 | ctx->fetchedData));
+
+    } else {
+        writeToBus(ctx->memoryDestination, ctx->registers.a);
+    }
+    emulateCPUCycles(1);  // 1 cycle for bus reading
+}
+
 /**
  * Processor for DI instructions.
  * Disables interrupts.
@@ -130,6 +170,7 @@ static IN_PROC processors[] = {
     [IN_LD] = procLD,      // Load inst
     [IN_XOR] = procXOR,    // XOR inst
     [IN_JP] = procJP,      // Jump inst
+    [IN_LDH] = procLDH,    // Load high inst
     [IN_DI] = procDI       // Sets master disabled
 };
 

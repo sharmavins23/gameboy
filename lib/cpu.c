@@ -20,54 +20,6 @@ static void fetchInstruction() {
 }
 
 /**
- * Fetches data for the current instruction.
- */
-static void fetchData() {
-    ctx.memoryDestination = 0;
-    ctx.destinationIsMemory = false;
-
-    if (ctx.currentInstruction == NULL) {
-        return;  // Avoid segfaults
-    }
-
-    switch (ctx.currentInstruction->mode) {
-        case AM_IMP:  // Implied mode
-
-            return;
-
-        case AM_R:  // Register
-            ctx.fetchedData = readCPURegister(ctx.currentInstruction->reg_1);
-
-            return;
-
-        case AM_R_D8:
-            ctx.fetchedData = readFromBus(ctx.registers.pc);
-            emulateCPUCycles(1);  // 1 CPU cycle for bus reading
-            ctx.registers.pc++;
-
-            return;
-
-        case AM_D16: {
-            u16 lo = readFromBus(ctx.registers.pc);
-            emulateCPUCycles(1);
-            u16 hi = readFromBus(ctx.registers.pc + 1);
-            emulateCPUCycles(1);
-
-            ctx.fetchedData = lo | (hi << 8);
-            ctx.registers.pc += 2;
-
-            return;
-        }
-
-        default:
-            printf("%sERR:%s Unknown addressing mode! %s%d%s (%s0x%02X%s)\n",
-                   CRED, CRST, CYEL, ctx.currentInstruction->mode, CRST, CMAG,
-                   ctx.currentOpcode, CRST);
-            exit(EXIT_FAILURE);
-    }
-}
-
-/**
  * Executes the current instruction.
  */
 static void execute() {
@@ -103,14 +55,16 @@ void stepCPU() {
         fetchInstruction();
         fetchData();
 
+        printf("PC %s0x%04X%s: %s%-7s%s (%s%02X%s %s%02X %02X%s) | ", CMAG, pc,
+               CRST, CBLU, getInstructionName(ctx.currentInstruction->type),
+               CRST, CCYN, ctx.currentOpcode, CRST, CMAG, readFromBus(pc + 1),
+               readFromBus(pc + 2), CRST);
         printf(
-            "%s0x%04X%s: %s%-7s%s (%s%02X%s %s%02X %02X%s) A: %02X B: %02X C: "
-            "%02X\n",
-            CMAG, pc, CRST, CBLU,
-            getInstructionName(ctx.currentInstruction->type), CRST, CCYN,
-            ctx.currentOpcode, CRST, CMAG, readFromBus(pc + 1),
-            readFromBus(pc + 2), CRST, ctx.registers.a, ctx.registers.b,
-            ctx.registers.c);
+            "AF=%s0x%04X%s BC=%s0x%04X%s DE=%s0x%04X%s HL=%s0x%04X%s "
+            "SP=%s0x%04X%s\n",
+            CMAG, readCPURegister(RT_AF), CRST, CMAG, readCPURegister(RT_BC),
+            CRST, CMAG, readCPURegister(RT_DE), CRST, CMAG,
+            readCPURegister(RT_HL), CRST, CMAG, readCPURegister(RT_SP), CRST);
 
         if (ctx.currentInstruction == NULL) {
             printf("%sERR:%s Unknown instruction encountered! %s0x%02X%s\n",

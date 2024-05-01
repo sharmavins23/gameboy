@@ -2,6 +2,8 @@
 
 #include <bus.h>
 #include <cart.h>
+#include <cpu.h>
+#include <ram.h>
 
 // * Memory map
 // 0x0000 - 0x3FFF : ROM Bank 0
@@ -16,7 +18,7 @@
 // 0xFE00 - 0xFE9F : Object Attribute Memory
 // 0xFEA0 - 0xFEFF : Reserved - Unusable
 // 0xFF00 - 0xFF7F : I/O Registers
-// 0xFF80 - 0xFFFE : Zero Page
+// 0xFF80 - 0xFFFE : Zero Page (high RAM)
 
 // ===== Bus functions =========================================================
 
@@ -27,12 +29,40 @@
  * @return The byte read from the bus.
  */
 u8 readFromBus(u16 address) {
-    // For now, only read from ROM
-    if (address < 0x8000) {
+    if (address < 0x8000) {  // ROM data
         return readCartridge(address);
+    } else if (address < 0xA000) {  // Character/Map data
+        NO_IMPLEMENTATION("readFromBus() for Character/Map data");
+    } else if (address < 0xC000) {  // Cartridge RAM
+        return readCartridge(address);
+    } else if (address < 0xE000) {  // Working RAM
+        return readWorkingRAM(address);
+    } else if (address < 0xFE00) {  // Reserved - Echo RAM
+        return 0;
+    } else if (address < 0xFEA0) {  // Object Attribute Memory
+        NO_IMPLEMENTATION("readFromBus() for Object Attribute Memory");
+    } else if (address < 0xFF00) {  // Reserved - Unusable
+        return 0;
+    } else if (address < 0xFF80) {  // I/O Registers
+        NO_IMPLEMENTATION("readFromBus() for I/O Registers");
+    } else if (address == 0xFFFF) {  // CPU Interrupt Enable Register
+        return readCPUIERegister();
+    } else {  // High RAM
+        return readHighRAM(address);
     }
+}
 
-    NO_IMPLEMENTATION("readFromBus() outside ROM");
+/**
+ * Reads 16 bits from the bus at the given address.
+ *
+ * @param address The address to read from.
+ * @return The 16 bits read from the bus.
+ */
+u16 read16FromBus(u16 address) {
+    u16 lo = readFromBus(address);
+    u16 hi = readFromBus(address + 1);
+
+    return lo | (hi << 8);
 }
 
 /**
@@ -42,11 +72,36 @@ u8 readFromBus(u16 address) {
  * @param value The value to write.
  */
 void writeToBus(u16 address, u8 value) {
-    if (address < 0x8000) {
-        // ROM Data
-        writeToCartridge(address, value);
+    if (address < 0x8000) {  // ROM data
+        return writeToCartridge(address, value);
+    } else if (address < 0xA000) {  // Character/Map data
+        NO_IMPLEMENTATION("writeToBus() for Character/Map data");
+    } else if (address < 0xC000) {  // Cartridge RAM
+        return writeToCartridge(address, value);
+    } else if (address < 0xE000) {  // Working RAM
+        return writeToWorkingRAM(address, value);
+    } else if (address < 0xFE00) {  // Reserved - Echo RAM
         return;
+    } else if (address < 0xFEA0) {  // Object Attribute Memory
+        NO_IMPLEMENTATION("writeToBus() for Object Attribute Memory");
+    } else if (address < 0xFF00) {  // Reserved - Unusable
+        return;
+    } else if (address < 0xFF80) {  // I/O Registers
+        NO_IMPLEMENTATION("writeToBus() for I/O Registers");
+    } else if (address == 0xFFFF) {  // CPU Interrupt Enable Register
+        return setCPUIERegister(value);
+    } else {
+        return writeToHighRAM(address, value);
     }
+}
 
-    NO_IMPLEMENTATION("writeToBus() outside ROM");
+/**
+ * Writes 16 bits to the bus at the given address.
+ *
+ * @param address The address to write to.
+ * @param value The 16 bits to write.
+ */
+void write16ToBus(u16 address, u16 value) {
+    writeToBus(address + 1, (value >> 8) & 0xFF);
+    writeToBus(address, value & 0xFF);
 }

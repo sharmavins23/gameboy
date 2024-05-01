@@ -4,27 +4,32 @@
 
 // Addressing modes for instructions
 typedef enum {
-    AM_IMP,     // Implied - Nothing to read after this
-    AM_R_D16,   // 16-bit into register
-    AM_R_R,     // Register into register
-    AM_MR_R,    // Register into memory location (reference in register)
-    AM_R,       // Single register
-    AM_R_D8,    // 8-bit into register
-    AM_R_MR,    // Memory location into register
-    AM_R_HLI,   // HL register memory location into register
-    AM_R_HLD,   // HL register data into register
-    AM_HLI_R,   // Register into HL register memory location
-    AM_HLD_R,   // Register into HL register data
-    AM_R_A8,    // A register into register
-    AM_A8_R,    // Register into A register
-    AM_HL_SPR,  // Stack pointer into HL register
-    AM_D16,     // 16-bit data
-    AM_D8,      // 8-bit data
-    AM_D16_R,   // Register into 16-bit data
-    AM_MR_D8,   // 8-bit data into memory location (reference in register)
-    AM_MR,      // Memory location (reference in register)
-    AM_A16_R,
-    AM_R_A16
+    AM_IMP,  // Implied - Nothing to read after this
+
+    AM_R,      // Single register
+    AM_R_R,    // Register into register
+    AM_R_D8,   // 8-bit bus data into register
+    AM_R_D16,  // 16-bit bus data into register
+    AM_R_A8,   // 8-bit address into register
+    AM_R_A16,  // 16-bit address into register
+    AM_R_MR,   // Memory location into register
+    AM_R_HLI,  // HL register into register, then increment
+    AM_R_HLD,  // HL register into register, then decrement
+
+    AM_MR,     // Memory location (reference in register)
+    AM_MR_R,   // Register into memory location (reference in register)
+    AM_MR_D8,  // 8-bit data into memory location (reference in register)
+
+    AM_HL_SPR,  // Stack pointer into HL register, increment by R8
+    AM_HLI_R,   // Register into HL register, then increment
+    AM_HLD_R,   // Register into HL register, then decrement
+
+    AM_D8,     // 8-bit data
+    AM_D16,    // 16-bit data
+    AM_D16_R,  // Register into 16-bit address
+    AM_A8_R,   // Register into 8-bit address
+    AM_A16_R   // Register to 16-bit address
+
 } addressingMode_t;
 
 // Register types for instructions
@@ -112,8 +117,8 @@ typedef enum {
 typedef struct {
     instructionType_t type;
     addressingMode_t mode;
-    registerType_t reg_1;
-    registerType_t reg_2;
+    registerType_t register1;
+    registerType_t register2;
     conditionType_t cond;
     u8 param;
 } instruction_t;
